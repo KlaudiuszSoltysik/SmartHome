@@ -10,6 +10,8 @@ public class Building
     public string Country { get; set; } = string.Empty;
     public double Latitude { get; set; }
     public double Longitude { get; set; }
+    
     public List<User> Users { get; set; } = [];
+    
     public List<Room> Rooms { get; set; } = [];
 }
