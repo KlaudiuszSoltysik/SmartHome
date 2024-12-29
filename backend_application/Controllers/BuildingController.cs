@@ -1,10 +1,11 @@
 ﻿using API.Data;
 using API.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend_application.Controllers;
 
-[Route("building")]
+[Route("buildings")]
 [ApiController]
 public class BuildingController : ControllerBase
 {
@@ -16,14 +17,18 @@ public class BuildingController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Building>>> GetBuildings()
+    public ActionResult<IEnumerable<Building>> GetBuildings()
     {
         var buildings =  _context.Buildings.ToList();
-        
-        return Ok(buildings);
+
+        if (buildings.Any())
+        {
+            return Ok(buildings);
+        }
+        return NotFound();
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("{id:int}")]
     public async Task<ActionResult<Building>> GetBuilding(int id)
     {
         var building = await _context.Buildings.FindAsync(id);
@@ -32,9 +37,20 @@ public class BuildingController : ControllerBase
         {
             return NotFound();
         }
-        else
+        return Ok(building);
+    }
+    
+    [HttpGet("{id:int}/users")]
+    public async Task<ActionResult<IEnumerable<User>>> GetBuildingUsers(int id)
+    {
+        var building = await _context.Buildings
+            .Include(b => b.Users)
+            .FirstOrDefaultAsync(b => b.Id == id);
+        
+        if (building == null || !building.Users.Any())
         {
-            return Ok(building);
+            return NotFound();
         }
+        return Ok(building.Users.ToList());
     }
 }    

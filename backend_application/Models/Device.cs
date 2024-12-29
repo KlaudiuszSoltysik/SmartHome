@@ -1,4 +1,6 @@
-﻿namespace API.Models;
+﻿using System.Text.Json.Serialization;
+
+namespace API.Models;
 
 public class Device
 {
@@ -7,6 +9,8 @@ public class Device
     public byte Type { get; set; }
     
     public int RoomId { get; set; }
+    
+    [JsonIgnore]
     public Room Room { get; set; } = null!;
     
     public List<DeviceData> DeviceData { get; set; } = [];
