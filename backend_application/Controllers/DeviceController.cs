@@ -1,5 +1,7 @@
-﻿using API.Data;
-using API.Models;
+﻿using backend_application.Data;
+using backend_application.Models;
+using backend_application.Dtos;
+using backend_application.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +19,7 @@ public class DeviceController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Device>>> GetDevices(int roomId)
+    public async Task<ActionResult<IEnumerable<DeviceDto>>> GetAll(int roomId)
     {
         var room = await _context.Rooms
             .Include(r => r.Devices)
@@ -27,11 +29,18 @@ public class DeviceController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(room.Devices.ToList());
+
+        var devices = room.Devices.ToList();
+        var deviceDtos = new List<DeviceDto>();
+        foreach (var device in devices)
+        {
+            deviceDtos.Add(DeviceMappers.BuildDeviceDto(device));
+        }
+        return Ok(deviceDtos);
     }
     
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Device>> GetDevice(int id)
+    public async Task<ActionResult<DeviceDto>> GetById(int id)
     {
         var device = await _context.Devices.FindAsync(id);
 
@@ -39,6 +48,8 @@ public class DeviceController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(device);
+        
+        var deviceDto = DeviceMappers.BuildDeviceDto(device);
+        return Ok(deviceDto);
     }
 }

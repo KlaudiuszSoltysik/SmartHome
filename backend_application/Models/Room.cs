@@ -1,10 +1,15 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
-namespace API.Models;
+namespace backend_application.Models;
 
 public class Room
 {
     public int Id { get; set; }
+    
+    [Required]
+    [MaxLength(50)]
+    [MinLength(1)]
     public string Name { get; set; } = string.Empty;
     
     public int BuildingId { get; set; }

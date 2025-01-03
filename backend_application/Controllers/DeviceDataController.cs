@@ -1,5 +1,7 @@
-﻿using API.Data;
-using API.Models;
+﻿using backend_application.Data;
+using backend_application.Models;
+using backend_application.Dtos;
+using backend_application.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +19,7 @@ public class DeviceDataController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<Device>> GetDeviceData(int deviceId)
+    public async Task<ActionResult<DeviceDataDto>> GetAll(int deviceId)
     {
         var device = await _context.Devices
             .Include(d => d.DeviceData)
@@ -27,11 +29,18 @@ public class DeviceDataController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(device.DeviceData.ToList());
+        
+        var deviceData = device.DeviceData.ToList();
+        var deviceDataDtos = new List<DeviceDataDto>();
+        foreach (var deviceDataSingular in deviceData)
+        {
+            deviceDataDtos.Add(DeviceDataMappers.BuildDeviceDataDto(deviceDataSingular));
+        }
+        return Ok(deviceDataDtos);
     }
     
     [HttpGet("last")]
-    public async Task<ActionResult<Device>> GetLastDeviceData(int deviceId)
+    public async Task<ActionResult<DeviceDataDto>> GetLast(int deviceId)
     {
         var device = await _context.Devices
             .Include(d => d.DeviceData)
@@ -41,8 +50,12 @@ public class DeviceDataController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(device.DeviceData
+
+        var deviceData = device.DeviceData
             .OrderByDescending(d => d.DateTime)
-            .FirstOrDefault());
+            .FirstOrDefault();
+        
+        var deviceDataDto = DeviceDataMappers.BuildDeviceDataDto(deviceData);
+        return Ok(deviceDataDto);
     }
 }

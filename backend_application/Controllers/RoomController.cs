@@ -1,5 +1,7 @@
-﻿using API.Data;
-using API.Models;
+﻿using backend_application.Data;
+using backend_application.Models;
+using backend_application.Dtos;
+using backend_application.Mappers;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,7 +19,7 @@ public class RoomController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<Building>>> GetRooms(int buildingId)
+    public async Task<ActionResult<IEnumerable<RoomDto>>> GetAll(int buildingId)
     {
         var building = await _context.Buildings
             .Include(b => b.Rooms)
@@ -27,11 +29,18 @@ public class RoomController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(building.Rooms.ToList());
+
+        var rooms = building.Rooms.ToList();
+        var roomsDtos = new List<RoomDto>();
+        foreach (var room in rooms)
+        {
+            roomsDtos.Add(RoomMappers.BuildRoomDto(room));
+        }
+        return Ok(roomsDtos);
     }
     
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<Building>> GetRoom(int id)
+    public async Task<ActionResult<RoomDto>> GetById(int id)
     {
         var room = await _context.Rooms.FindAsync(id);
 
@@ -39,6 +48,8 @@ public class RoomController : ControllerBase
         {
             return NotFound();
         }
-        return Ok(room);
+        
+        var roomDto = RoomMappers.BuildRoomDto(room);
+        return Ok(roomDto);
     }
 }
