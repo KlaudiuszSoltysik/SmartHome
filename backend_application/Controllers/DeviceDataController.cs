@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_application.Controllers;
 
-[Route("buildings/{buildingId}/rooms/{roomId}/devices/{deviceId}/devicedata")]
+[Route("buildings/{buildingId:int}/rooms/{roomId:int}/devices/{deviceId:int}/devicedata")]
 [ApiController]
 public class DeviceDataController : ControllerBase
 {
@@ -19,7 +19,7 @@ public class DeviceDataController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<DeviceDataDto>> GetAll(int deviceId)
+    public async Task<ActionResult<DeviceDataGetDto>> GetAll(int deviceId)
     {
         var device = await _context.Devices
             .Include(d => d.DeviceData)
@@ -31,31 +31,36 @@ public class DeviceDataController : ControllerBase
         }
         
         var deviceData = device.DeviceData.ToList();
-        var deviceDataDtos = new List<DeviceDataDto>();
+        var deviceDataDtos = new List<DeviceDataGetDto>();
         foreach (var deviceDataSingular in deviceData)
         {
-            deviceDataDtos.Add(DeviceDataMappers.BuildDeviceDataDto(deviceDataSingular));
+            deviceDataDtos.Add(DeviceDataMappers.BuildDeviceDataGetDto(deviceDataSingular));
         }
         return Ok(deviceDataDtos);
     }
     
-    [HttpGet("last")]
-    public async Task<ActionResult<DeviceDataDto>> GetLast(int deviceId)
-    {
-        var device = await _context.Devices
-            .Include(d => d.DeviceData)
-            .FirstOrDefaultAsync(d => d.Id == deviceId);
-        
-        if (device == null || !device.DeviceData.Any())
-        {
-            return NotFound();
-        }
-
-        var deviceData = device.DeviceData
-            .OrderByDescending(d => d.DateTime)
-            .FirstOrDefault();
-        
-        var deviceDataDto = DeviceDataMappers.BuildDeviceDataDto(deviceData);
-        return Ok(deviceDataDto);
-    }
+    // [HttpGet("last")]
+    // public async Task<ActionResult<DeviceDataGetDto>> GetLast(int deviceId)
+    // {
+    //     var device = await _context.Devices
+    //         .Include(d => d.DeviceData)
+    //         .FirstOrDefaultAsync(d => d.Id == deviceId);
+    //     
+    //     if (device == null)
+    //     {
+    //         return NotFound();
+    //     }
+    //
+    //     var deviceData = device.DeviceData
+    //         .OrderByDescending(d => d.DateTime)
+    //         .FirstOrDefault();
+    //
+    //     if (deviceData == null)
+    //     {
+    //         return NotFound();
+    //     }
+    //     
+    //     var deviceDataDto = DeviceDataMappers.BuildDeviceDataGetDto(deviceData);
+    //     return Ok(deviceDataDto);
+    // }
 }

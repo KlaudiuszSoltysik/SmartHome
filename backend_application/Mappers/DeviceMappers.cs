@@ -6,12 +6,27 @@ namespace backend_application.Mappers;
 
 public class DeviceMappers
 {
-    public static DeviceDto BuildDeviceDto(Device device)
+    public static DeviceGetDto BuildDeviceGetDto(Device device)
     {
-        return new DeviceDto
+        return new DeviceGetDto
         {
+            Id = device.Id,
             Name = device.Name,
             Type = device.Type,
+            DeviceData = device.DeviceData
+                .OrderByDescending(d => d.DateTime)
+                .FirstOrDefault(),
+        };
+    }
+    
+    public static Device BuildDevicePostDto(Room room, DevicePostDto deviceDto)
+    {
+        return new Device
+        {
+            Name = deviceDto.Name,
+            Type = deviceDto.Type,
+            RoomId = room.Id,
+            Room = room
         };
     }
 }

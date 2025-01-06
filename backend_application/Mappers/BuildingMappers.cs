@@ -9,12 +9,21 @@ public class BuildingMappers
 {
     public static BuildingGetDto BuildBuildingGetDto(Building building)
     {
+        List<string> users = new List<string>();
+        
+        foreach (var user in building.Users.ToList())
+        {
+            users.Add(user.Name);
+        }
         return new BuildingGetDto 
-            {
+            { 
+            Id = building.Id,
             Name = building.Name,
             Address = building.Address,
             PostalCode = building.PostalCode,
             Country = building.Country,
+            Rooms = building.Rooms,
+            Users = users,
             };
     }
 
@@ -39,9 +48,9 @@ public class BuildingMappers
     {
         const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
         const int length = 20;
-        Random random = new Random();
-        char[] result = new char[length];
-        String randomKey;
+        var random = new Random();
+        var result = new char[length];
+        string randomKey;
         
         do
         {
@@ -71,8 +80,8 @@ public class BuildingMappers
         }
         
         var jsonArray = JArray.Parse(response);
-        var lat = jsonArray[0]["lat"]?.ToString();;
-        var lon = jsonArray[0]["lon"]?.ToString();;
+        var lat = jsonArray[0]["lat"]?.ToString();
+        var lon = jsonArray[0]["lon"]?.ToString();
         
         url = $"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json";
         response = await client.GetStringAsync(url);
@@ -80,9 +89,9 @@ public class BuildingMappers
         
         return new Dictionary<string, string>
         {
-            {"address", $"{jsonObject["address"]["road"]} {jsonObject["address"]["house_number"]}"},
-            {"postalCode", jsonObject["address"]["postcode"].ToString()},
-            {"country", jsonObject["address"]["country_code"].ToString()},
+            {"address", $"{jsonObject["address"]?["road"]} {jsonObject["address"]?["house_number"]}"},
+            {"postalCode", jsonObject["address"]?["postcode"]?.ToString()},
+            {"country", jsonObject["address"]?["country_code"]?.ToString()},
             {"lat", lat},
             {"lon", lon},
         };

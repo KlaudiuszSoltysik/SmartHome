@@ -1,5 +1,4 @@
 ﻿using backend_application.Data;
-using backend_application.Models;
 using backend_application.Dtos;
 using backend_application.Mappers;
 using Microsoft.AspNetCore.Mvc;
@@ -19,18 +18,21 @@ public class BuildingController : ControllerBase
     }
 
     [HttpGet]
-    public ActionResult<IEnumerable<BuildingGetDto>> GetAll()
+    public async Task<ActionResult<IEnumerable<BuildingGetDto>>> GetAll()
     {
-        var buildings =  _context.Buildings.ToList();
-
+        var buildings = await _context.Buildings
+            .Include(b => b.Rooms)
+            .Include(b => b.Users)
+            .ToListAsync();
+    
         if (buildings.Any())
         {
-            var buildingsDtos = new List<BuildingGetDto>();
+            var buildingDtos = new List<BuildingGetDto>();
             foreach (var building in buildings)
             {
-                buildingsDtos.Add(BuildingMappers.BuildBuildingGetDto(building));
+                buildingDtos.Add(BuildingMappers.BuildBuildingGetDto(building));
             }
-            return Ok(buildingsDtos);
+            return Ok(buildingDtos);
         }
         return NotFound();
     }
@@ -38,7 +40,10 @@ public class BuildingController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<BuildingGetDto>> GetById(int id)
     {
-        var building = await _context.Buildings.FindAsync(id);
+        var building = await _context.Buildings
+            .Include(b => b.Rooms)
+            .Include(b => b.Users)
+            .FirstOrDefaultAsync(b => b.Id == id);
 
         if (building == null)
         {
@@ -48,27 +53,6 @@ public class BuildingController : ControllerBase
         var buildingDto = BuildingMappers.BuildBuildingGetDto(building);
         
         return Ok(buildingDto);
-    }
-    
-    [HttpGet("{id:int}/users")]
-    public async Task<ActionResult<IEnumerable<UserDtoShort>>> GetRelatedUsers(int id)
-    {
-        var building = await _context.Buildings
-            .Include(b => b.Users)
-            .FirstOrDefaultAsync(b => b.Id == id);
-        
-        if (building == null || !building.Users.Any())
-        {
-            return NotFound();
-        }
-        
-        var users = building.Users.ToList();
-        var userDto = new List<UserDtoShort>();
-        foreach (var user in users)
-        {
-            userDto.Add(UserMappers.BuildUserDtoShort(user));
-        }
-        return Ok(userDto);
     }
 
     [HttpPost]
@@ -80,7 +64,7 @@ public class BuildingController : ControllerBase
             await _context.Buildings.AddAsync(buildingModel);
             await _context.SaveChangesAsync();
             var buildingGetDto = BuildingMappers.BuildBuildingGetDto(buildingModel);
-            return CreatedAtAction(nameof(GetById), new { id = buildingModel.Id }, buildingGetDto);
+            return CreatedAtAction(nameof(GetById), new { buildingModel.Id }, buildingGetDto);
         }
         catch (Exception ex)
         {
@@ -89,7 +73,7 @@ public class BuildingController : ControllerBase
     }
     
     [HttpPut("{id:int}")]
-    public async Task<ActionResult<BuildingGetDto>> Put([FromRoute] int id, [FromBody] BuildingPutDto buildingDto)
+    public async Task<ActionResult<BuildingGetDto>> Put(int id, [FromBody] BuildingPutDto buildingDto)
     {
         var building = await _context.Buildings.FindAsync(id);
 
@@ -109,6 +93,43 @@ public class BuildingController : ControllerBase
         
         await _context.SaveChangesAsync();
         
-        return BuildingMappers.BuildBuildingGetDto(building);
+        return Ok(BuildingMappers.BuildBuildingGetDto(building));
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var building = await _context.Buildings.FindAsync(id);
+
+        if (building == null)
+        {
+            return NotFound();
+        }
+        
+        _context.Buildings.Remove(building);
+        await _context.SaveChangesAsync();
+
+        return Ok();
+    }
+    
+    [HttpGet("{id:int}/users")]
+    public async Task<ActionResult<IEnumerable<UserGetDtoShort>>> GetRelatedUsers(int id)
+    {
+        var building = await _context.Buildings
+            .Include(b => b.Users)
+            .FirstOrDefaultAsync(b => b.Id == id);
+        
+        if (building == null || !building.Users.Any())
+        {
+            return NotFound();
+        }
+        
+        var users = building.Users.ToList();
+        var userDto = new List<UserGetDtoShort>();
+        foreach (var user in users)
+        {
+            userDto.Add(UserMappers.BuildUserGetDtoShort(user));
+        }
+        return Ok(userDto);
     }
 }    

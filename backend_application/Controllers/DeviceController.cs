@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_application.Controllers;
 
-[Route("buildings/{buildingId}/rooms/{roomId}/devices")]
+[Route("buildings/{buildingId:int}/rooms/{roomId:int}/devices")]
 [ApiController]
 public class DeviceController : ControllerBase
 {
@@ -19,7 +19,7 @@ public class DeviceController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<DeviceDto>>> GetAll(int roomId)
+    public async Task<ActionResult<IEnumerable<DeviceGetDto>>> GetAll(int roomId)
     {
         var room = await _context.Rooms
             .Include(r => r.Devices)
@@ -31,16 +31,16 @@ public class DeviceController : ControllerBase
         }
 
         var devices = room.Devices.ToList();
-        var deviceDtos = new List<DeviceDto>();
+        var deviceDtos = new List<DeviceGetDto>();
         foreach (var device in devices)
         {
-            deviceDtos.Add(DeviceMappers.BuildDeviceDto(device));
+            deviceDtos.Add(DeviceMappers.BuildDeviceGetDto(device));
         }
         return Ok(deviceDtos);
     }
     
     [HttpGet("{id:int}")]
-    public async Task<ActionResult<DeviceDto>> GetById(int id)
+    public async Task<ActionResult<DeviceGetDto>> GetById(int id)
     {
         var device = await _context.Devices.FindAsync(id);
 
@@ -49,7 +49,57 @@ public class DeviceController : ControllerBase
             return NotFound();
         }
         
-        var deviceDto = DeviceMappers.BuildDeviceDto(device);
+        var deviceDto = DeviceMappers.BuildDeviceGetDto(device);
         return Ok(deviceDto);
+    }
+    
+    [HttpPost]
+    public async Task<ActionResult<DeviceGetDto>> Post(int buildingId, int roomId, [FromBody] DevicePostDto deviceDto)
+    {
+        var room = await _context.Rooms.FindAsync(roomId);
+        
+        if (room == null)
+        {
+            return NotFound();
+        }
+        
+        var deviceModel = DeviceMappers.BuildDevicePostDto(room, deviceDto);
+        await _context.Devices.AddAsync(deviceModel); 
+        await _context.SaveChangesAsync();
+        var deviceGetDto = DeviceMappers.BuildDeviceGetDto(deviceModel);
+        return CreatedAtAction(nameof(GetById), new {  buildingId, roomId, deviceModel.Id }, deviceGetDto);
+    }
+    
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<DeviceGetDto>> Put(int id, [FromBody] DevicePutDto deviceDto)
+    {
+        var device = await _context.Devices.FindAsync(id);
+
+        if (device == null)
+        {
+            return NotFound();
+        }
+        
+        device.Name = deviceDto.Name;
+        
+        await _context.SaveChangesAsync();
+        
+        return Ok(DeviceMappers.BuildDeviceGetDto(device));
+    }
+
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var device = await _context.Devices.FindAsync(id);
+
+        if (device == null)
+        {
+            return NotFound();
+        }
+        
+        _context.Devices.Remove(device);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }
