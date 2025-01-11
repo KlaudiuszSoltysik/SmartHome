@@ -17,8 +17,8 @@ public class User
     [EmailAddress]
     public string Email { get; set; } = string.Empty;
     
-    [MaxLength(64)]
-    [MinLength(64)]
+    [MaxLength(256)]
+    [MinLength(256)]
     [DataType(DataType.Password)]
     public string Password { get; set; } = string.Empty;
     
