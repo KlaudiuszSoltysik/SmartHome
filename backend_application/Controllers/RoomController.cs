@@ -27,7 +27,7 @@ public class RoomController : ControllerBase
         
         if (building == null || !building.Rooms.Any())
         {
-            return NotFound();
+            return NotFound("No rooms found.");
         }
 
         var rooms = building.Rooms.ToList();
@@ -48,7 +48,7 @@ public class RoomController : ControllerBase
 
         if (room == null)
         {
-            return NotFound();
+            return NotFound("Room not found.");
         }
         
         var roomDto = RoomMappers.BuildRoomGetDto(room);
@@ -62,7 +62,7 @@ public class RoomController : ControllerBase
         
         if (building == null)
         {
-            return NotFound();
+            return NotFound("Building not found.");
         }
         
         var roomModel = RoomMappers.BuildRoomPostDto(building, roomDto);
@@ -78,7 +78,7 @@ public class RoomController : ControllerBase
 
         if (room == null)
         {
-            return NotFound();
+            return NotFound("Room not found.");
         }
         
         room.Name = roomDto.Name;
@@ -95,7 +95,7 @@ public class RoomController : ControllerBase
 
         if (room == null)
         {
-            return NotFound();
+            return NotFound("Room not found.");
         }
         
         _context.Rooms.Remove(room);

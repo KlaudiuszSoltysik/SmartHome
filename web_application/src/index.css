@@ -1,11 +1,17 @@
+* {
+  box-sizing: border-box;
+}
+
 :root {
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  --color-primary: #3B82F6;
+  --color-error: #FF5555;
+  --color-secondary: #22C55E;
+  --color-low-priority: #a0a0a0;
+  --color-background: #242424;
+  --color-text: #f9f9f9;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -13,56 +19,160 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+::placeholder {
+  color: var(--color-low-priority);
+  opacity: 1;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  color-scheme: light dark;
+  color: var(--color-text);
+  background-color: var(--color-background);
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+input {
+  margin-bottom: 20px;
+  padding: 2px 4px;
+  width: 30vw;
+  height: 35px;
+  min-width: 300px;
+  border: 1px solid var(--color-text);
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  box-sizing: border-box;
+  font-size: 18px;
+  padding: 8px 16px;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
+.register-page, .login-page, .home-page, .account-page {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.content-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-button {
+  width: 30vw;
+  min-width: 300px;
+}
+
+.primary-button {
+  background-color: var(--color-primary);
+  border: none;
+  transition: box-shadow 0.1s ease-in-out;
+}
+
+.primary-button:hover {
+  box-shadow: 0 0 2px 1px var(--color-primary);
+}
+
+.secondary-button {
+  background-color: var(--color-secondary);
+  border: none;
+  transition: box-shadow 0.1s ease-in-out;
+}
+
+.secondary-button:hover {
+  box-shadow: 0 0 2px 1px var(--color-secondary);
+}
+
+.tertiary-button {
+  background-color: var(--color-error);
+  border: none;
+  transition: box-shadow 0.1s ease-in-out;
+}
+
+.tertiary-button:hover {
+  box-shadow: 0 0 2px 1px var(--color-error);
+}
+
+.error-message {
+  color: var(--color-error);
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+}
+
+.shimmer-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.shimmer-block {
+  width: 100%;
+  height: 20px;
+  background: linear-gradient(
+          90deg,
+          var(--color-low-priority) 25%,
+          var(--color-primary) 50%,
+          var(--color-low-priority) 75%
+  );
+  background-size: 200% 100%;
+  animation: colorFlow 5s infinite linear;
+  border-radius: 4px;
+}
+
+@keyframes colorFlow {
+  0% {
+    background-position: 200% 0;
   }
-  a:hover {
-    color: #747bff;
+  100% {
+    background-position: -200% 0;
   }
-  button {
-    background-color: #f9f9f9;
-  }
+}
+
+.popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: var(--color-text);
+  padding: 20px;
+  z-index: 1000;
+  text-align: center;
+  border-radius: 8px;
+}
+
+.popup input {
+  background-color: var(--color-text);
+  border: 1px solid var(--color-background);
+}
+
+.popup input::placeholder {
+  color: var(--color-background);
+}
+
+.popup h1, .popup p {
+  color: var(--color-background);
+}
+
+.popup input:focus {
+  border: 1px solid var(--color-primary);
+  outline: none;
+}
+
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 999;
 }

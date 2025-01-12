@@ -27,7 +27,7 @@ public class DeviceController : ControllerBase
         
         if (room == null || !room.Devices.Any())
         {
-            return NotFound();
+            return NotFound("No devices found.");
         }
 
         var devices = room.Devices.ToList();
@@ -46,7 +46,7 @@ public class DeviceController : ControllerBase
 
         if (device == null)
         {
-            return NotFound();
+            return NotFound("Device not found.");
         }
         
         var deviceDto = DeviceMappers.BuildDeviceGetDto(device);
@@ -60,7 +60,7 @@ public class DeviceController : ControllerBase
         
         if (room == null)
         {
-            return NotFound();
+            return NotFound("Room not found.");
         }
         
         var deviceModel = DeviceMappers.BuildDevicePostDto(room, deviceDto);
@@ -77,7 +77,7 @@ public class DeviceController : ControllerBase
 
         if (device == null)
         {
-            return NotFound();
+            return NotFound("Device not found.");
         }
         
         device.Name = deviceDto.Name;
@@ -94,7 +94,7 @@ public class DeviceController : ControllerBase
 
         if (device == null)
         {
-            return NotFound();
+            return NotFound("Device not found.");
         }
         
         _context.Devices.Remove(device);

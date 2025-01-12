@@ -34,7 +34,7 @@ public class BuildingController : ControllerBase
             }
             return Ok(buildingDtos);
         }
-        return NotFound();
+        return NotFound("No buildings found.");
     }
 
     [HttpGet("{id:int}")]
@@ -47,7 +47,7 @@ public class BuildingController : ControllerBase
 
         if (building == null)
         {
-            return NotFound();
+            return NotFound("Building not found.");
         }
 
         var buildingDto = BuildingMappers.BuildBuildingGetDto(building);
@@ -79,7 +79,7 @@ public class BuildingController : ControllerBase
 
         if (building == null)
         {
-            return NotFound();
+            return NotFound("Building not found.");
         }
         
         var buildingDictionary = await BuildingMappers.ValidateAddress(buildingDto.Address, buildingDto.PostalCode, buildingDto.Country);
@@ -103,7 +103,7 @@ public class BuildingController : ControllerBase
 
         if (building == null)
         {
-            return NotFound();
+            return NotFound("Building not found.");
         }
         
         _context.Buildings.Remove(building);
@@ -121,7 +121,7 @@ public class BuildingController : ControllerBase
         
         if (building == null || !building.Users.Any())
         {
-            return NotFound();
+            return NotFound("Building not found.");
         }
         
         var users = building.Users.ToList();

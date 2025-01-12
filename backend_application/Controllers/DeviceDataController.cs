@@ -27,7 +27,7 @@ public class DeviceDataController : ControllerBase
         
         if (device == null || !device.DeviceData.Any())
         {
-            return NotFound();
+            return NotFound("No device data found.");
         }
         
         var deviceData = device.DeviceData.ToList();

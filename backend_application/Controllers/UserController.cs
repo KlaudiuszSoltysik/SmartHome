@@ -71,14 +71,14 @@ public class UserController : ControllerBase
             .FirstOrDefaultAsync(u => u.Email == userDto.Email);
         if (user == null)
         {
-            return NotFound();
+            return NotFound("Email address not found.");
         }
         
         var passwordHasher = new PasswordHasher<User>();
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Password, userDto.Password);
         if (verificationResult != PasswordVerificationResult.Success)
         {
-            return ValidationProblem();
+            return Unauthorized("Invalid password.");
         }
         
         var token = _tokenGenerator.GenerateToken(user.Id);
@@ -89,47 +89,47 @@ public class UserController : ControllerBase
         });
     }
     
-    // [HttpPut("{id:int}")]
-    // public async Task<ActionResult<UserGetDtoFull>> Put(int id, [FromBody] UserPutDto userDto)
-    // {
-    //     var user = await _context.Users.FindAsync(id);
-    //
-    //     if (user == null)
-    //     {
-    //         return NotFound();
-    //     }
-    //     
-    //     user.Name = userDto.Name;
-    //     
-    //     await _context.SaveChangesAsync();
-    //     
-    //     return Ok(UserMappers.BuildUserGetDtoFull(user));
-    // }
-    //
-    // [HttpDelete("{id:int}")]
-    // public async Task<ActionResult> Delete(int id)
-    // {
-    //     var user = await _context.Users
-    //         .Include(u => u.Buildings)
-    //         .FirstOrDefaultAsync(u => u.Id == id); 
-    //
-    //     if (user == null)
-    //     {
-    //         return NotFound();
-    //     }
-    //
-    //     foreach (var building in user.Buildings.ToList())
-    //     {
-    //         if (building.Users.Count == 1)
-    //         {
-    //             _context.Buildings.Remove(building);
-    //         }
-    //     }
-    //     
-    //     _context.Users.Remove(user);
-    //     // IMPLEMENT LOGOUT
-    //     await _context.SaveChangesAsync();
-    //
-    //     return Ok();
-    // }
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<UserGetDtoFull>> Put(int id, [FromBody] UserPutDto userDto)
+    {
+        var user = await _context.Users.FindAsync(id);
+    
+        if (user == null)
+        {
+            return NotFound();
+        }
+        
+        user.Name = userDto.Name;
+        
+        await _context.SaveChangesAsync();
+        
+        return Ok(UserMappers.BuildUserGetDtoFull(user));
+    }
+    
+    [HttpDelete("{id:int}")]
+    public async Task<ActionResult> Delete(int id)
+    {
+        var user = await _context.Users
+            .Include(u => u.Buildings)
+            .FirstOrDefaultAsync(u => u.Id == id); 
+    
+        if (user == null)
+        {
+            return NotFound();
+        }
+    
+        foreach (var building in user.Buildings.ToList())
+        {
+            if (building.Users.Count == 1)
+            {
+                _context.Buildings.Remove(building);
+            }
+        }
+        
+        _context.Users.Remove(user);
+        // IMPLEMENT LOGOUT
+        await _context.SaveChangesAsync();
+    
+        return Ok();
+    }
 }

@@ -20,7 +20,7 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.WithOrigins("https://example.com")
+        policy.WithOrigins("http://localhost:5173", "http://localhost:5050")
             .AllowAnyHeader()
             .AllowAnyMethod();
     });
@@ -56,8 +56,11 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseCors();
 app.UseHttpsRedirection();
-app.MapControllers();
+app.UseRouting(); 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapControllers();
 app.Run();
