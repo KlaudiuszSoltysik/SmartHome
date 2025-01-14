@@ -27,7 +27,7 @@ public class BuildingMappers
             };
     }
 
-    public static async Task<Building> BuildBuildingPost(BuildingPostDto buildingDto, ApplicationDbContext context)
+    public static async Task<Building> BuildBuildingPost(BuildingPostDto buildingDto, User user, ApplicationDbContext context)
     {
         var randomKey = CreateKey(context);
         var buildingDictionary = await ValidateAddress(buildingDto.Address, buildingDto.PostalCode, buildingDto.Country);
@@ -41,6 +41,7 @@ public class BuildingMappers
             Country = buildingDictionary["country"],
             Latitude = Convert.ToDouble(buildingDictionary["lat"]),
             Longitude = Convert.ToDouble(buildingDictionary["lon"]),
+            Users = new List<User> {user},
         };
     }
     

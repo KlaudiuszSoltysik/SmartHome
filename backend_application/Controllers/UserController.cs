@@ -36,7 +36,7 @@ public class UserController : ControllerBase
         
         try
         {
-            var user = await GetUserIdFromTokenClass.GetUserIdFromToken(token, _context);
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
             
             var userDto = UserMappers.BuildUserGetDtoFull(user);
             return Ok(userDto);
@@ -89,47 +89,69 @@ public class UserController : ControllerBase
         });
     }
     
-    [HttpPut("{id:int}")]
+    [HttpPut]
     public async Task<ActionResult<UserGetDtoFull>> Put(int id, [FromBody] UserPutDto userDto)
     {
-        var user = await _context.Users.FindAsync(id);
-    
-        if (user == null)
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound();
+            return Unauthorized("Authorization token is missing.");
         }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         
-        user.Name = userDto.Name;
+        try
+        {
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            
+            user.Name = userDto.Name;
         
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
         
-        return Ok(UserMappers.BuildUserGetDtoFull(user));
+            return Ok(UserMappers.BuildUserGetDtoFull(user));
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
     
-    [HttpDelete("{id:int}")]
+    [HttpDelete]
     public async Task<ActionResult> Delete(int id)
     {
-        var user = await _context.Users
-            .Include(u => u.Buildings)
-            .FirstOrDefaultAsync(u => u.Id == id); 
-    
-        if (user == null)
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound();
+            return Unauthorized("Authorization token is missing.");
         }
-    
-        foreach (var building in user.Buildings.ToList())
-        {
-            if (building.Users.Count == 1)
-            {
-                _context.Buildings.Remove(building);
-            }
-        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         
-        _context.Users.Remove(user);
-        // IMPLEMENT LOGOUT
-        await _context.SaveChangesAsync();
+        try
+        {
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            
+            foreach (var building in user.Buildings.ToList())
+            {
+                if (building.Users.Count == 1)
+                {
+                    _context.Buildings.Remove(building);
+                }
+            }
+        
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
     
-        return Ok();
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
+    
+    // TODO CONFIRM PASSWORD
+    // TODO RESET PASSWORD
 }

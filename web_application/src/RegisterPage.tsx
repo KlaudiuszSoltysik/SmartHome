@@ -1,5 +1,5 @@
 ﻿import {useEffect, useState} from 'react';
-import {useNavigate} from "react-router-dom";
+import {useNavigate} from 'react-router-dom';
 import {validateEmail} from './utilities/validateEmail.ts';
 import {validatePassword} from './utilities/validatePassword.ts';
 
@@ -7,9 +7,9 @@ const LoginPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.title = "SmartHome - Register";
+        document.title = 'SmartHome - Register';
 
-        if (localStorage.getItem("jwtToken")) {
+        if (localStorage.getItem('jwtToken')) {
             navigate('/');
         }
     }, [navigate]);
@@ -42,14 +42,12 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const credentials = {name, email, password};
-
             const response = await fetch('http://localhost:5050/users/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(credentials),
+                body: JSON.stringify({name, email, password}),
             });
 
             if (!response.ok) {
@@ -58,6 +56,8 @@ const LoginPage = () => {
                     throw new Error(errorMessage || 'Failed to register.');
                 });
             }
+
+            navigate('/login', {state: {message: 'Confirm your email and log in.'}});
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
@@ -104,7 +104,7 @@ const LoginPage = () => {
                     </button>
                 </form>
                 <p className={'error-message'}
-                   style={{visibility: error ? 'visible' : 'hidden'}}>{error ? error : 'error'}</p>
+                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
             </div>
         </div>
     );

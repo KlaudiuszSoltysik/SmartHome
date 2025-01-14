@@ -49,6 +49,7 @@ builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenGenerator>();
 
 var app = builder.Build();
+app.UseCors();
 
 if (app.Environment.IsDevelopment()) 
 {
@@ -56,7 +57,6 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseCors();
 app.UseHttpsRedirection();
 app.UseRouting(); 
 app.UseAuthentication();

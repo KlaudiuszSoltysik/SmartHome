@@ -1,5 +1,5 @@
-﻿import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
+﻿import {useEffect, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 
 const AccountPage = () => {
     const navigate = useNavigate();
@@ -8,6 +8,34 @@ const AccountPage = () => {
     const [showPopup, setShowPopup] = useState(false);
     const [name, setName] = useState('');
     const [error, setError] = useState('');
+    const [timer, setTimer] = useState<number | null>(null);
+
+    useEffect(() => {
+        document.title = 'SmartHome - Account';
+
+        if (!localStorage.getItem('jwtToken')) {
+            navigate('/login');
+            return;
+        }
+
+        fetchUserData();
+    }, [navigate]);
+
+    const handleMouseDown = () => {
+        setError('Press the button for 3 seconds to delete.');
+        const newTimer = setTimeout(() => {
+            deleteUser();
+        }, 3000);
+        setTimer(newTimer);
+    };
+
+    const handleMouseUpOrLeave = () => {
+        setError('');
+        if (timer) {
+            clearTimeout(timer);
+            setTimer(null);
+        }
+    };
 
     const handleSubmit = async () => {
         if (!name) {
@@ -18,106 +46,124 @@ const AccountPage = () => {
         setError('');
         setLoading(true);
 
-        // try {
-        //     const response = await fetch('http://localhost:5050/users/register', {
-        //         method: 'POST',
-        //         headers: {
-        //             'Content-Type': 'application/json',
-        //         },
-        //         body: JSON.stringify(name),
-        //     });
-        //
-        //     if (!response.ok) {
-        //         return response.text().then(errorMessage => {
-        //             setError(errorMessage || 'Failed to register.');
-        //             throw new Error(errorMessage || 'Failed to register.');
-        //         });
-        //     }
-        // } catch (error:unknown) {
-        //     if (error instanceof Error) {
-        //         setError(error.message);
-        //     } else {
-        //         setError('An unknown error occurred');
-        //     }
-        // } finally {
-        //     setLoading(false);
-        // }
+        try {
+            const response = await fetch('http://localhost:5050/users', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+                body: JSON.stringify({name}),
+            });
+
+            if (!response.ok) {
+                return response.text().then(errorMessage => {
+                    setError(errorMessage || 'Failed to change name.');
+                    throw new Error(errorMessage || 'Failed to change name.');
+                });
+            }
+
+            setShowPopup(false);
+            await fetchUserData();
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('An unknown error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
     };
 
-    useEffect(() => {
-        document.title = "SmartHome - Account";
+    const deleteUser = async () => {
+        setLoading(true);
 
-        if (!localStorage.getItem("jwtToken")) {
-            navigate('/login');
-            return;
-        }
+        try {
+            const response = await fetch('http://localhost:5050/users', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+                body: JSON.stringify({name}),
+            });
 
-        const fetchUserData = async () => {
-            try {
-                const token = localStorage.getItem("jwtToken");
-                const response = await fetch('http://localhost:5050/users', {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+            if (!response.ok) {
+                return response.text().then(errorMessage => {
+                    setError(errorMessage || 'Failed to delete user.');
+                    throw new Error(errorMessage || 'Failed to delete user.');
                 });
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch user data');
-                }
-
-                const data = await response.json();
-                setUserInfo(data);
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    setError(error.message);
-                } else {
-                    setError('An unknown error occurred');
-                }
-            } finally {
-                setLoading(false);
             }
-        };
 
-        fetchUserData();
-    }, [navigate]);
+            localStorage.removeItem('jwtToken');
+            navigate('/login');
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('An unknown error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
-    if (loading) {
-        return (
-            <div className='account-page'>
-                <div className='content-container'>
-                    <h1>Account</h1>
-                    <div className="shimmer-wrapper">
-                        <div className="shimmer-block"></div>
-                        <div className="shimmer-block"></div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    const fetchUserData = async () => {
+        try {
+            const response = await fetch('http://localhost:5050/users', {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+            });
 
-    if (error) {
-        return (
-            <div className='account-page'>
-                <div className='content-container'>
-                    <p className={'error-message'}>{error}</p>
-                </div>
-            </div>
-        );
-    }
+            if (!response.ok) {
+                throw new Error('Failed to fetch user data');
+            }
+
+            const data = await response.json();
+            setUserInfo(data);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('An unknown error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <div className='account-page'>
             <div className='content-container'>
                 <h1>Account</h1>
-                <p><strong>Name:</strong> {userInfo.name}</p>
-                <p><strong>Email:</strong> {userInfo.email}</p>
+                {loading && (
+                    <div className='shimmer-wrapper'>
+                        <div className='shimmer-block'></div>
+                        <div className='shimmer-block'></div>
+                    </div>
+                )}
+                {!loading && (
+                    <>
+                        <p><strong>Name:</strong> {userInfo.name}</p>
+                        <p><strong>Email:</strong> {userInfo.email}</p>
+                    </>
+                )}
                 <div className={'row'}>
                     <button className={'secondary-button'} onClick={() => setShowPopup(!showPopup)}>Edit name</button>
-                    <button className={'tertiary-button'}>Delete account</button>
+                    <button className={'tertiary-button'}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={handleMouseUpOrLeave}
+                            onMouseLeave={handleMouseUpOrLeave}>
+                        Delete account
+                    </button>
                 </div>
+                <p className={'error-message'}
+                   style={{visibility: error && !showPopup ? 'visible' : 'hidden'}}>{error || 'error'}</p>
                 {showPopup && (
                     <>
-                        <div className="popup">
+                        <div className='popup'>
                             <div className='form-container'>
                                 <h1>Edit name</h1>
                                 <form onSubmit={(e) => {
@@ -133,14 +179,17 @@ const AccountPage = () => {
                                     />
                                     <br/>
                                     <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                                        {loading ? 'Logging in...' : 'Login'}
+                                        {loading ? 'In progress...' : 'Change'}
                                     </button>
                                 </form>
                                 <p className={'error-message'}
-                                   style={{visibility: error ? 'visible' : 'hidden'}}>{error ? error : 'error'}</p>
+                                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
                             </div>
                         </div>
-                        <div className="backdrop" onClick={() => setShowPopup(!showPopup)}></div>
+                        <div className='backdrop' onClick={() => {
+                            setShowPopup(!showPopup);
+                            setError('')
+                        }}></div>
                     </>
                 )}
             </div>

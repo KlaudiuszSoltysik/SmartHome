@@ -1,25 +1,31 @@
 ﻿import {useEffect, useState} from 'react';
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from 'react-router-dom';
 import {validateEmail} from './utilities/validateEmail.ts';
 import {validatePassword} from './utilities/validatePassword.ts';
 
 const LoginPage = () => {
     const navigate = useNavigate();
-
-    useEffect(() => {
-        document.title = "SmartHome - Login";
-
-        if (localStorage.getItem("jwtToken")) {
-            navigate('/');
-        }
-    }, [navigate]);
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const location = useLocation();
+    const message = location.state?.message;
+
+    useEffect(() => {
+        document.title = 'SmartHome - Login';
+
+        if (localStorage.getItem('jwtToken')) {
+            navigate('/');
+        }
+    }, [navigate]);
+
     const handleSubmit = async () => {
+        if (location.state?.message) {
+            location.state.message = null;
+        }
+
         const emailError = validateEmail(email);
         if (emailError) {
             setError(emailError);
@@ -36,14 +42,12 @@ const LoginPage = () => {
         setLoading(true);
 
         try {
-            const credentials = {email, password};
-
             const response = await fetch('http://localhost:5050/users/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify(credentials),
+                body: JSON.stringify({email, password}),
             });
 
             if (!response.ok) {
@@ -61,7 +65,7 @@ const LoginPage = () => {
             } else {
                 setError('Token not found in the response');
             }
-            console.log(jwtToken);
+
             navigate('/');
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -101,8 +105,18 @@ const LoginPage = () => {
                         {loading ? 'Logging in...' : 'Login'}
                     </button>
                 </form>
-                <p className={'error-message'}
-                   style={{visibility: error ? 'visible' : 'hidden'}}>{error ? error : 'error'}</p>
+                <div style={{display: 'flex'}}>
+                    <p className={'error-message'}
+                       style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
+                    <p className={'error-message'}
+                       style={{color: '#3B82F6', visibility: message ? 'visible' : 'hidden'}}>{message || ''}</p>
+                </div>
+                <button className={'secondary-button form-button'} onClick={() => navigate('/register')}>Register new
+                    account
+                </button>
+                <button className={'tertiary-button form-button'} onClick={() => navigate('/reset-password')}>Reset
+                    password
+                </button>
             </div>
         </div>
     );

@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend_application.Utilities;
 
-public class GetUserIdFromTokenClass
+public class GetUserFromTokenClass
 {
-    public static async Task<User> GetUserIdFromToken(string token, ApplicationDbContext context)
+    public static async Task<User> GetUserFromToken(string token, ApplicationDbContext context)
     {
         if (string.IsNullOrEmpty(token))
         {

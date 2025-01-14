@@ -1,6 +1,7 @@
 ﻿using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Mappers;
+using backend_application.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,21 +21,40 @@ public class BuildingController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<BuildingGetDto>>> GetAll()
     {
-        var buildings = await _context.Buildings
-            .Include(b => b.Rooms)
-            .Include(b => b.Users)
-            .ToListAsync();
-    
-        if (buildings.Any())
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            var buildingDtos = new List<BuildingGetDto>();
-            foreach (var building in buildings)
-            {
-                buildingDtos.Add(BuildingMappers.BuildBuildingGetDto(building));
-            }
-            return Ok(buildingDtos);
+            return Unauthorized("Authorization token is missing.");
         }
-        return NotFound("No buildings found.");
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        
+        try
+        {
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            
+            var buildings = await _context.Buildings
+                .Include(b => b.Rooms)
+                .Include(b => b.Users)
+                .Where(b => b.Users.Any(u => u.Id == user.Id))
+                .ToListAsync();
+    
+            if (buildings.Any())
+            {
+                var buildingDtos = new List<BuildingGetDto>();
+                foreach (var building in buildings)
+                {
+                    buildingDtos.Add(BuildingMappers.BuildBuildingGetDto(building));
+                }
+                return Ok(buildingDtos);
+            }
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
 
     [HttpGet("{id:int}")]
@@ -58,17 +78,28 @@ public class BuildingController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<BuildingGetDto>> Post([FromBody] BuildingPostDto buildingDto)
     {
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        
         try
         {
-            var buildingModel = await BuildingMappers.BuildBuildingPost(buildingDto, _context);
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            
+            var buildingModel = await BuildingMappers.BuildBuildingPost(buildingDto, user, _context);
             await _context.Buildings.AddAsync(buildingModel);
             await _context.SaveChangesAsync();
             var buildingGetDto = BuildingMappers.BuildBuildingGetDto(buildingModel);
             return CreatedAtAction(nameof(GetById), new { buildingModel.Id }, buildingGetDto);
         }
-        catch (Exception ex)
+        catch (Exception e)
         {
-            return BadRequest(ex.Message);
+            return BadRequest(e.Message);
         }
     }
     
