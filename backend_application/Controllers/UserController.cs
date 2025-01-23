@@ -15,11 +15,13 @@ public class UserController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly JwtTokenGenerator _tokenGenerator;
+    private readonly IEmailSender _emailSender;
     
-    public UserController(ApplicationDbContext context, JwtTokenGenerator tokenGenerator)
+    public UserController(ApplicationDbContext context, JwtTokenGenerator tokenGenerator, IEmailSender emailSender)
     {
         _context = context;
         _tokenGenerator = tokenGenerator;
+        _emailSender = emailSender;
     }
     
     [HttpGet]
@@ -46,6 +48,38 @@ public class UserController : ControllerBase
             return Unauthorized(e.Message);
         }
     }
+    
+    [HttpGet("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail(int userId, string code)
+    {
+        try
+        {
+            var user = await _context.Users.FindAsync(userId);
+
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+
+            if (user.ConfirmationCode != code)
+            {
+                return BadRequest("Invalid confirmation code.");
+            }
+            
+            user.IsActive = true;
+            user.ConfirmationCode = null;
+            
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
 
     [HttpPost("register")]
     public async Task<ActionResult<UserGetDtoFull>> PostRegister([FromBody] UserPostRegisterDto userDto)
@@ -53,8 +87,26 @@ public class UserController : ControllerBase
         try
         {
             var userModel = await UserMappers.BuildUserPostRegister(userDto, _context);
+            
+            var confirmationCode = Guid.NewGuid().ToString();
+            
+            userModel.ConfirmationCode = confirmationCode;
+            
             await _context.Users.AddAsync(userModel);
             await _context.SaveChangesAsync();
+            
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userModel.Email);
+
+            var callbackUrl = Url.Action(
+                action: "ConfirmEmail",
+                controller: "User",
+                values: new { userId = user.Id, code = confirmationCode },
+                protocol: HttpContext.Request.Scheme
+            );
+            
+            await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
+                $"Confirm your email <a href='{callbackUrl}'>here</a>.");
+
             return Ok();
         }
         catch (Exception ex)
@@ -74,6 +126,11 @@ public class UserController : ControllerBase
             return NotFound("Email address not found.");
         }
         
+        if (!user.IsActive)
+        {
+            return Unauthorized("Account is not activated.");
+        }
+        
         var passwordHasher = new PasswordHasher<User>();
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Password, userDto.Password);
         if (verificationResult != PasswordVerificationResult.Success)
@@ -87,6 +144,80 @@ public class UserController : ControllerBase
             {"user", UserMappers.BuildUserGetDtoFull(user)},
             {"token", token}
         });
+    }
+    
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] string email)
+    {
+        try
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            
+            var resetToken = Guid.NewGuid().ToString();
+            user.ResetPasswordToken = resetToken;
+            user.ResetPasswordExpires = DateTime.UtcNow.AddMinutes(15);
+   
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+            
+            var frontendUrl = "http://localhost:5173/reset-password";
+            var resetLink = $"{frontendUrl}?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
+            
+            var emailBody = $@"
+            <p>Click the link below to reset your password:</p>
+            <a href='{resetLink}'>Reset Password</a>
+            <p>If you didn't request this, please ignore this email.</p>";
+            
+            await _emailSender.SendEmailAsync(user.Email, "Reset Password", emailBody);
+    
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+    
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto userDto)
+    {
+        try
+        {
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userDto.Email);
+            
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+            
+            if (user.ResetPasswordToken != userDto.Token || DateTime.UtcNow > user.ResetPasswordExpires)
+            {
+                return BadRequest("Invalid or expired reset token.");
+            }
+            
+            ValidatePasswordClass.ValidatePassword(userDto.Password);
+        
+            var passwordHasher = new PasswordHasher<User>();
+        
+            user.Password = passwordHasher.HashPassword(user, userDto.Password);
+            
+            user.ResetPasswordToken = null;
+            user.ResetPasswordExpires = null;
+            
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+    
+            return Ok();
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
     
     [HttpPut]
@@ -151,7 +282,4 @@ public class UserController : ControllerBase
             return Unauthorized(e.Message);
         }
     }
-    
-    // TODO CONFIRM PASSWORD
-    // TODO RESET PASSWORD
 }

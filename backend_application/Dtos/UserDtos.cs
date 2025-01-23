@@ -48,6 +48,25 @@ public class UserPostLoginDto
     public string Password { get; set; } = string.Empty;
 }
 
+public class UserResetPasswordDto
+{
+    [Required]
+    [MaxLength(50)]
+    [DataType(DataType.EmailAddress)]
+    [EmailAddress]
+    public string Email { get; set; }
+    
+    [MaxLength(72)]
+    [MinLength(18)]
+    public string Token { get; set; }
+    
+    [Required]
+    [MinLength(8)]
+    [DataType(DataType.Password)]
+    public string Password { get; set; }
+}
+
+
 public class UserPutDto
 {
     [Required]

@@ -22,7 +22,7 @@ const AccountPage = () => {
     }, [navigate]);
 
     const handleMouseDown = () => {
-        setError('Press the button for 3 seconds to delete.');
+        setError('Hold the button for 3 seconds to delete.');
         const newTimer = setTimeout(() => {
             deleteUser();
         }, 3000);

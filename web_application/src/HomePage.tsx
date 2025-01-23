@@ -1,8 +1,15 @@
 ﻿import {useEffect, useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 
+interface Building {
+    name: string;
+    address: string;
+    postalCode: string;
+    country: string;
+}
+
 const HomePage = () => {
-    const [buildings, setBuildings] = useState([]);
+    const [buildings, setBuildings] = useState<Building[]>([]);
     const [error, setError] = useState('');
     const [name, setName] = useState('');
     const [address, setAddress] = useState('');

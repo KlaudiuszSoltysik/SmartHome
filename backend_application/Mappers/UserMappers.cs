@@ -50,6 +50,7 @@ public class UserMappers
         };
         
         user.Password = passwordHasher.HashPassword(user, userDto.Password);
+        user.IsActive = false;
 
         return user;
     }

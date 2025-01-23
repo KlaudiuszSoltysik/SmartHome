@@ -16,11 +16,6 @@ public class GetUserFromTokenClass
             throw new EvaluateException("No token provided.");
         }
         
-        if (await context.JwtTokens.FirstOrDefaultAsync(t => t.Token == token) != null)
-        {
-            throw new EvaluateException("Token is blacklisted.");
-        }
-        
         var claimsPrincipal = new JwtSecurityTokenHandler().ReadJwtToken(token);
         var userIdFromToken = claimsPrincipal?.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
 

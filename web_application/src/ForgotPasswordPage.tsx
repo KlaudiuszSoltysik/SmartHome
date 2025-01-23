@@ -1,19 +1,15 @@
 ﻿import {useEffect, useState} from 'react';
-import {useNavigate, useSearchParams} from 'react-router-dom';
-import {validatePassword} from './utilities/validatePassword.ts';
+import {useNavigate} from 'react-router-dom';
+import {validateEmail} from './utilities/validateEmail.ts';
 
-const ResetPasswordPage = () => {
+const ForgotPasswordPage = () => {
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-
-    const [password, setPassword] = useState('');
+    const [email, setEmail] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const token = searchParams.get('token');
-    const email = searchParams.get('email');
 
     useEffect(() => {
-        document.title = 'SmartHome - Reset password';
+        document.title = 'SmartHome - Forgot password';
 
         if (localStorage.getItem('jwtToken')) {
             navigate('/');
@@ -21,9 +17,9 @@ const ResetPasswordPage = () => {
     }, [navigate]);
 
     const handleSubmit = async () => {
-        const passwordError = validatePassword(password);
-        if (passwordError) {
-            setError(passwordError);
+        const emailError = validateEmail(email);
+        if (emailError) {
+            setError(emailError);
             return;
         }
 
@@ -31,12 +27,12 @@ const ResetPasswordPage = () => {
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/users/reset-password', {
+            const response = await fetch('http://localhost:5050/users/forgot-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({email, token, password}),
+                body: JSON.stringify(email),
             });
 
             if (!response.ok) {
@@ -46,7 +42,7 @@ const ResetPasswordPage = () => {
                 });
             }
 
-            navigate('/login', {state: {message: 'Password had been set.'}});
+            navigate('/login', {state: {message: 'Check your email inbox.'}});
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
@@ -68,14 +64,14 @@ const ResetPasswordPage = () => {
                 }}
                       noValidate={true}>
                     <input
-                        type='password'
-                        placeholder='Password'
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        type='email'
+                        placeholder='Email'
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
                     <br/>
                     <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                        {loading ? 'Setting password...' : 'Set password'}
+                        {loading ? 'Sending email...' : 'Send email'}
                     </button>
                 </form>
                 <p className={'error-message'} style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
@@ -84,4 +80,4 @@ const ResetPasswordPage = () => {
     );
 };
 
-export default ResetPasswordPage;
+export default ForgotPasswordPage;

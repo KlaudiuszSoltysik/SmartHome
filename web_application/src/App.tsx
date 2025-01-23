@@ -5,6 +5,7 @@ import HomePage from './HomePage';
 import LoginPage from './LoginPage';
 import RegisterPage from './RegisterPage';
 import AccountPage from './AccountPage';
+import ForgotPasswordPage from './ForgotPasswordPage.tsx';
 import ResetPasswordPage from './ResetPasswordPage';
 
 const App: React.FC = () => {
@@ -14,6 +15,7 @@ const App: React.FC = () => {
                 <Route path='/' element=<HomePage/>/>
                 <Route path='/login' element=<LoginPage/>/>
                 <Route path='/register' element=<RegisterPage/>/>
+                <Route path='/forgot-password' element=<ForgotPasswordPage/>/>
                 <Route path='/reset-password' element=<ResetPasswordPage/>/>
                 <Route path='/account' element=<AccountPage/>/>
                 <Route path='*' element={<Navigate to='/'/>}/>

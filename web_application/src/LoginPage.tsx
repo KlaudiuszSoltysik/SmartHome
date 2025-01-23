@@ -114,7 +114,7 @@ const LoginPage = () => {
                 <button className={'secondary-button form-button'} onClick={() => navigate('/register')}>Register new
                     account
                 </button>
-                <button className={'tertiary-button form-button'} onClick={() => navigate('/reset-password')}>Reset
+                <button className={'tertiary-button form-button'} onClick={() => navigate('/forgot-password')}>Reset
                     password
                 </button>
             </div>

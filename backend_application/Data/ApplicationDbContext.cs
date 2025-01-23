@@ -37,5 +37,4 @@ public class ApplicationDbContext : DbContext
     public DbSet<Device> Devices { get; set; }
     public DbSet<DeviceData> DeviceData { get; set; }
     public DbSet<User> Users { get; set; }
-    public DbSet<JwtToken> JwtTokens { get; set; }
 }

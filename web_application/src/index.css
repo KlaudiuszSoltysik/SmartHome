@@ -47,7 +47,7 @@ button {
   margin: 16px 0;
 }
 
-.register-page, .login-page, .home-page, .account-page, .reset-password-page {
+.register-page, .login-page, .home-page, .account-page, .forgot-password-page {
   display: flex;
   justify-content: center;
   align-items: center;
