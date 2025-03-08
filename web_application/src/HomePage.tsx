@@ -28,7 +28,42 @@ const HomePage = () => {
         }
 
         fetchBuildings();
+        refreshToken();
     }, [navigate]);
+
+    const refreshToken = async () => {
+        try {
+            const response = await fetch('http://localhost:5050/users/refresh', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+            });
+
+            if (!response.ok) {
+                return response.text().then(errorMessage => {
+                    setError(errorMessage || 'An unknown error occurred.');
+                    throw new Error(errorMessage || 'An unknown error occurred.');
+                });
+            }
+
+            const data = await response.json();
+            const jwtToken = data.token;
+
+            if (jwtToken) {
+                localStorage.setItem('jwtToken', jwtToken);
+            } else {
+                setError('Token not found in the response.');
+            }
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('An unknown error occurred.');
+            }
+        }
+    }
 
     const fetchBuildings = async () => {
         setError('');
@@ -49,9 +84,10 @@ const HomePage = () => {
                 throw new Error(errorMessage || 'Failed to get buildings.');
             }
 
-            const buildingsData = await response.json();
-            if (buildingsData && buildingsData.length > 0) {
-                setBuildings(buildingsData);
+            const responseText = await response.text();
+
+            if (responseText.length > 0) {
+                setBuildings(await response.json());
             } else {
                 setError('No buildings found.');
             }

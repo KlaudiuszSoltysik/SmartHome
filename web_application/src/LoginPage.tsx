@@ -63,7 +63,7 @@ const LoginPage = () => {
             if (jwtToken) {
                 localStorage.setItem('jwtToken', jwtToken);
             } else {
-                setError('Token not found in the response');
+                setError('Token not found in the response.');
             }
 
             navigate('/');
@@ -71,7 +71,7 @@ const LoginPage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError('An unknown error occurred.');
             }
         } finally {
             setLoading(false);

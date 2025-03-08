@@ -32,7 +32,7 @@ public class User
     [MaxLength(72)]
     public string? ResetPasswordToken { get; set; } = string.Empty;
     
-    public DateTime? ResetPasswordExpires { get; set; } = DateTime.Now;
+    public DateTime? ResetPasswordExpires { get; set; } = DateTime.UtcNow;
     
     public List<Building> Buildings { get; set; } = [];
 }

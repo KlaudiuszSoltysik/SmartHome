@@ -1,4 +1,6 @@
-﻿using backend_application.Data;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Models;
 using backend_application.Mappers;
@@ -60,8 +62,7 @@ public class UserController : ControllerBase
             {
                 return NotFound("User not found.");
             }
-
-
+            
             if (user.ConfirmationCode != code)
             {
                 return BadRequest("Invalid confirmation code.");
@@ -73,7 +74,7 @@ public class UserController : ControllerBase
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
-            return Ok();
+            return Redirect("http://localhost:5173/login");
         }
         catch (Exception ex)
         {
@@ -144,6 +145,32 @@ public class UserController : ControllerBase
             {"user", UserMappers.BuildUserGetDtoFull(user)},
             {"token", token}
         });
+    }
+    
+    [HttpGet("refresh")]
+    public async Task<ActionResult> RefreshToken()
+    {
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        
+        try
+        {
+            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            
+            var newToken = _tokenGenerator.GenerateToken(user.Id);
+            return Ok(new Dictionary<string, dynamic>
+            { {"token", newToken} });
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
     
     [HttpPost("forgot-password")]
