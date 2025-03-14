@@ -84,10 +84,10 @@ const HomePage = () => {
                 throw new Error(errorMessage || 'Failed to get buildings.');
             }
 
-            const responseText = await response.text();
+            const responseJson = await response.json();
 
-            if (responseText.length > 0) {
-                setBuildings(await response.json());
+            if (responseJson.length > 0) {
+                setBuildings(responseJson);
             } else {
                 setError('No buildings found.');
             }

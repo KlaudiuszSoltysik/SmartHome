@@ -1,4 +1,6 @@
+using System.Net.WebSockets;
 using System.Text;
+using backend_application.Controllers;
 using backend_application.Data;
 using backend_application.Utilities;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -46,6 +48,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenGenerator>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
+builder.Services.AddSingleton<FrameStorageService>();
 
 var app = builder.Build();
 app.UseCors();
@@ -56,10 +59,19 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+var webSocketOptions = new WebSocketOptions
+{
+    KeepAliveInterval = TimeSpan.FromMinutes(2)
+};
+
+webSocketOptions.AllowedOrigins.Add("*");
+
+app.UseWebSockets(webSocketOptions);
+
 app.UseHttpsRedirection();
 app.UseRouting(); 
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();

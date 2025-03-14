@@ -74,6 +74,27 @@ public class BuildingController : ControllerBase
         
         return Ok(buildingDto);
     }
+    
+    [HttpGet("{id:int}/users")]
+    public async Task<ActionResult<IEnumerable<UserGetDtoShort>>> GetRelatedUsers(int id)
+    {
+        var building = await _context.Buildings
+            .Include(b => b.Users)
+            .FirstOrDefaultAsync(b => b.Id == id);
+        
+        if (building == null || !building.Users.Any())
+        {
+            return NotFound("Building not found.");
+        }
+        
+        var users = building.Users.ToList();
+        var userDto = new List<UserGetDtoShort>();
+        foreach (var user in users)
+        {
+            userDto.Add(UserMappers.BuildUserGetDtoShort(user));
+        }
+        return Ok(userDto);
+    }
 
     [HttpPost]
     public async Task<ActionResult<BuildingGetDto>> Post([FromBody] BuildingPostDto buildingDto)
@@ -141,26 +162,5 @@ public class BuildingController : ControllerBase
         await _context.SaveChangesAsync();
 
         return Ok();
-    }
-    
-    [HttpGet("{id:int}/users")]
-    public async Task<ActionResult<IEnumerable<UserGetDtoShort>>> GetRelatedUsers(int id)
-    {
-        var building = await _context.Buildings
-            .Include(b => b.Users)
-            .FirstOrDefaultAsync(b => b.Id == id);
-        
-        if (building == null || !building.Users.Any())
-        {
-            return NotFound("Building not found.");
-        }
-        
-        var users = building.Users.ToList();
-        var userDto = new List<UserGetDtoShort>();
-        foreach (var user in users)
-        {
-            userDto.Add(UserMappers.BuildUserGetDtoShort(user));
-        }
-        return Ok(userDto);
     }
 }    
