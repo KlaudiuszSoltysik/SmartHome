@@ -86,7 +86,6 @@ const AccountPage = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
                 },
-                body: JSON.stringify({name}),
             });
 
             if (!response.ok) {

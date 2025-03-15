@@ -10,12 +10,13 @@ function Stream() {
 
             ws.current.onopen = () => {
                 console.log("WebSocket connection established.");
-                // Send a message when connection is opened
                 const message = {
                     token: localStorage.getItem("jwtToken"),
-                    selected_id: 0,
+                    building_id: 1,
+                    room_id: 1,
+                    camera_id: 0,
                 };
-                ws.current?.send(JSON.stringify(message)); // Make sure you send a JSON object
+                ws.current?.send(JSON.stringify(message));
             };
 
             ws.current.onmessage = (event) => {
@@ -36,25 +37,22 @@ function Stream() {
 
             ws.current.onclose = () => {
                 console.warn("WebSocket disconnected. Reconnecting...");
-                setTimeout(connectWebSocket, 2000); // Attempt reconnect after 2 seconds
+                setTimeout(connectWebSocket, 2000);
             };
         };
 
-        connectWebSocket(); // Initial connection
+        connectWebSocket();
 
         return () => {
-            // Cleanup when component unmounts
             if (ws.current) {
                 ws.current.close();
             }
             if (imageSrc) URL.revokeObjectURL(imageSrc);
         };
-    }, []); // Empty dependency array ensures this runs only once
-
+    }, []);
 
     return (
         <div>
-            <h2>Live Stream</h2>
             {imageSrc ? (
                 <img src={imageSrc} alt="Stream" style={{width: "100%"}}/>
             ) : (

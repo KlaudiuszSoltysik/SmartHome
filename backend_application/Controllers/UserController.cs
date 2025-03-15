@@ -1,4 +1,6 @@
-﻿using backend_application.Data;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Models;
 using backend_application.Mappers;
@@ -16,12 +18,14 @@ public class UserController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly JwtTokenGenerator _tokenGenerator;
     private readonly IEmailSender _emailSender;
+    private readonly TokenValidator _tokenValidator;
     
-    public UserController(ApplicationDbContext context, JwtTokenGenerator tokenGenerator, IEmailSender emailSender)
+    public UserController(ApplicationDbContext context, JwtTokenGenerator tokenGenerator, IEmailSender emailSender, TokenValidator tokenValidator)
     {
         _context = context;
         _tokenGenerator = tokenGenerator;
         _emailSender = emailSender;
+        _tokenValidator = tokenValidator;
     }
     
     [HttpGet]
@@ -38,7 +42,7 @@ public class UserController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             var userDto = UserMappers.BuildUserGetDtoFull(user);
             return Ok(userDto);
@@ -159,7 +163,7 @@ public class UserController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             var newToken = _tokenGenerator.GenerateToken(user.Id);
             return Ok(new Dictionary<string, dynamic>
@@ -245,8 +249,107 @@ public class UserController : ControllerBase
         }
     }
     
+    [HttpPost("add-user")]
+    public async Task<IActionResult> AddUser([FromBody] AddUserDto addUserDto)
+    {
+        var buildingId = addUserDto.BuildingId;
+        var email = addUserDto.Email;
+        
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return Unauthorized("Authorization token is missing.");
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        
+        try
+        {
+            var user = await TokenValidator.GetUserFromToken(token, _context);
+            
+            if (user == null)
+            {
+                return NotFound("User not found.");
+            }
+
+            if (user.Buildings.All(b => b.Id != buildingId))
+            {
+                return BadRequest("Building not found.");
+            }
+
+            if (_context.Users.All(u => u.Email != email))
+            {
+                var subject = "Invitation to create account";
+                var body = $"Create free account at <a href='http://localhost:5173/register'>SmartHome</a>";
+            
+                await _emailSender.SendEmailAsync(email, subject, body);
+            }
+            
+            var invitationToken = _tokenGenerator.GenerateInvitationToken(email, buildingId);
+
+            var invitationLink = Url.Action(
+                action: "AcceptInvitation",
+                controller: "User",
+                values: new { token = invitationToken },
+                protocol: HttpContext.Request.Scheme
+            );
+                
+            var subject2 = "Invitation to Join Building";
+            var body2 = $"You have been invited to join a building. Click the following link to accept the invitation: <a href='{invitationLink}'>Accept Invitation</a>";
+            
+            await _emailSender.SendEmailAsync(email, subject2, body2);
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
+
+        return Ok();
+    }
+    
+    [HttpGet("accept-invitation")]
+    public async Task<IActionResult> AcceptInvitation(string token)
+    {
+        var principal = _tokenValidator.ValidateInvitationToken(token);
+
+        if (principal == null)
+        {
+            return Unauthorized("Invalid or expired token.");
+        }
+        
+        var email = principal.FindFirst(ClaimTypes.Email)?.Value 
+                    ?? principal.FindFirst("email")?.Value;
+        var buildingId = int.Parse(principal.FindFirst("buildingId")?.Value);
+        
+        var user = await _context.Users
+            .FirstOrDefaultAsync(u => u.Email == email);
+        
+        if (user == null)
+        {
+            return NotFound("User not found.");
+        }
+
+        var building = await _context.Buildings
+            .Include(b => b.Users)
+            .FirstOrDefaultAsync(b => b.Id == buildingId);
+
+        if (building == null)
+        {
+            return NotFound("Building not found.");
+        }
+        
+        if (!building.Users.Contains(user))
+        {
+            building.Users.Add(user);
+            await _context.SaveChangesAsync();
+        }
+
+        return Ok("User successfully added to the building.");
+    }
+    
     [HttpPut]
-    public async Task<ActionResult<UserGetDtoFull>> Put(int id, [FromBody] UserPutDto userDto)
+    public async Task<ActionResult<UserGetDtoFull>> Put([FromBody] UserPutDto userDto)
     {
         var authorizationHeader = Request.Headers["Authorization"].ToString();
 
@@ -259,7 +362,7 @@ public class UserController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             user.Name = userDto.Name;
         
@@ -274,7 +377,7 @@ public class UserController : ControllerBase
     }
     
     [HttpDelete]
-    public async Task<ActionResult> Delete(int id)
+    public async Task<ActionResult> Delete()
     {
         var authorizationHeader = Request.Headers["Authorization"].ToString();
 
@@ -287,11 +390,14 @@ public class UserController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             foreach (var building in user.Buildings.ToList())
             {
-                if (building.Users.Count == 1)
+                var userCountInBuilding = await _context.BuildingUser
+                    .CountAsync(bu => bu.BuildingId == building.Id);
+
+                if (userCountInBuilding == 1)
                 {
                     _context.Buildings.Remove(building);
                 }

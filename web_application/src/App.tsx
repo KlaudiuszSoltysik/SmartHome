@@ -7,6 +7,7 @@ import RegisterPage from './RegisterPage';
 import AccountPage from './AccountPage';
 import ForgotPasswordPage from './ForgotPasswordPage.tsx';
 import ResetPasswordPage from './ResetPasswordPage';
+import BuildingPage from "./BuildingPage.tsx";
 import Stream from "./Stream.tsx";
 
 const App: React.FC = () => {
@@ -19,6 +20,7 @@ const App: React.FC = () => {
                 <Route path='/forgot-password' element=<ForgotPasswordPage/>/>
                 <Route path='/reset-password' element=<ResetPasswordPage/>/>
                 <Route path='/account' element=<AccountPage/>/>
+                <Route path="/building/:buildingId" element={<BuildingPage/>}/>
                 <Route path='/stream' element=<Stream/>/>
                 <Route path='*' element={<Navigate to='/'/>}/>
             </Routes>

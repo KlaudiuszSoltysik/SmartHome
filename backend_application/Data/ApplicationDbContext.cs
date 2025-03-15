@@ -14,6 +14,11 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<Building>()
             .HasMany(b => b.Users)
             .WithMany(u => u.Buildings)
+            .UsingEntity<BuildingUser>(j => j.ToTable("BuildingUser"));
+        
+        modelBuilder.Entity<Building>()
+            .HasMany(b => b.Users)
+            .WithMany(u => u.Buildings)
             .UsingEntity(j => j.ToTable("BuildingUser"));
         
         modelBuilder.Entity<Room>()
@@ -32,6 +37,7 @@ public class ApplicationDbContext : DbContext
             .HasForeignKey(d => d.DeviceId);
     }
 
+    public DbSet<BuildingUser> BuildingUser { get; set; }
     public DbSet<Building> Buildings { get; set; }
     public DbSet<Room> Rooms { get; set; }
     public DbSet<Device> Devices { get; set; }

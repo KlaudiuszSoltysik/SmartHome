@@ -20,11 +20,13 @@ builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
     {
-        policy.AllowAnyOrigin()
+        policy.SetIsOriginAllowed(origin => true)
             .AllowAnyHeader()
-            .AllowAnyMethod();
+            .AllowAnyMethod()
+            .AllowCredentials();
     });
 });
+builder.WebHost.UseUrls("http://0.0.0.0:5050", "http://localhost:5050");
 
 builder.Services.AddAuthentication(options =>
     {
@@ -47,6 +49,8 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 builder.Services.AddScoped<JwtTokenGenerator>();
+builder.Services.AddScoped<TokenValidator>();
+
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSingleton<FrameStorageService>();
 
@@ -61,10 +65,9 @@ if (app.Environment.IsDevelopment())
 
 var webSocketOptions = new WebSocketOptions
 {
-    KeepAliveInterval = TimeSpan.FromMinutes(2)
+    KeepAliveInterval = TimeSpan.FromMinutes(2),
+    AllowedOrigins = { "*" }
 };
-
-webSocketOptions.AllowedOrigins.Add("*");
 
 app.UseWebSockets(webSocketOptions);
 
@@ -75,3 +78,6 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+// make app more user friendly
+// continue react app

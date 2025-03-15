@@ -66,11 +66,21 @@ public class UserResetPasswordDto
     public string Password { get; set; }
 }
 
-
 public class UserPutDto
 {
     [Required]
     [MaxLength(50)]
     [MinLength(1)]
     public string Name { get; set; } = string.Empty;
+}
+
+public class AddUserDto
+{
+    [Required]
+    [MaxLength(50)]
+    [MinLength(1)]
+    public string Email { get; set; } = string.Empty;
+    
+    [Required]
+    public int BuildingId { get; set; }
 }

@@ -1,34 +1,30 @@
 ﻿import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import {useNavigate, useParams} from 'react-router-dom';
 
-interface Building {
+interface Room {
     id: string;
     name: string;
-    address: string;
-    postalCode: string;
-    country: string;
 }
 
-const HomePage = () => {
-    const [buildings, setBuildings] = useState<Building[]>([]);
+const RoomPage = () => {
+    const {buildingId} = useParams();
+
+    const [rooms, setRooms] = useState<Room[]>([]);
     const [error, setError] = useState('');
     const [name, setName] = useState('');
-    const [address, setAddress] = useState('');
-    const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true);
-    
+
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.title = 'SmartHome - Home Page';
+        document.title = 'SmartHome - Building';
 
         if (!localStorage.getItem('jwtToken')) {
             navigate('/login');
         }
 
-        fetchBuildings();
+        fetchRooms();
         refreshToken();
     }, [navigate]);
 
@@ -66,12 +62,12 @@ const HomePage = () => {
         }
     }
 
-    const fetchBuildings = async () => {
+    const fetchRooms = async () => {
         setError('');
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/buildings', {
+            const response = await fetch(`http://localhost:5050/buildings/${buildingId}/rooms`, {
                 method: 'GET',
                 headers: {
                     'Content-Type': 'application/json',
@@ -81,16 +77,16 @@ const HomePage = () => {
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to get buildings.');
-                throw new Error(errorMessage || 'Failed to get buildings.');
+                setError(errorMessage || 'Failed to get rooms.');
+                throw new Error(errorMessage || 'Failed to get rooms.');
             }
 
             const responseJson = await response.json();
 
             if (responseJson.length > 0) {
-                setBuildings(responseJson);
+                setRooms(responseJson);
             } else {
-                setError('No buildings found.');
+                setError('No rooms found.');
             }
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -108,44 +104,27 @@ const HomePage = () => {
             setError('Name is required.');
             return;
         }
-        if (!address) {
-            setError('Address is required.');
-            return;
-        }
-        if (!postalCode) {
-            setError('Postal code is required.');
-            return;
-        }
-        if (!country) {
-            setError('Country is required.');
-            return;
-        }
-
-        if (country.length > 2) {
-            setError('Use country code.');
-            return;
-        }
 
         setError('');
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/buildings', {
+            const response = await fetch(`http://localhost:5050/buildings/${buildingId}/rooms`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
                 },
-                body: JSON.stringify({name, address, postalCode, country}),
+                body: JSON.stringify({name}),
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to add building.');
-                throw new Error(errorMessage || 'Failed to add building.');
+                setError(errorMessage || 'Failed to add room.');
+                throw new Error(errorMessage || 'Failed to add room.');
             }
 
-            await fetchBuildings();
+            await fetchRooms();
             setShowPopup(false);
         } catch (error: unknown) {
             if (error instanceof Error) {
@@ -161,16 +140,13 @@ const HomePage = () => {
     return (
         <div className='home-page'>
             <div className='content-container'>
-                <h1>Your buildings</h1>
+                <h1>Your rooms</h1>
                 {loading ? (
                     <div className={'loader'}></div>
                 ) : (
-                    buildings.map((building, index) => (
-                        <div className={'row'} key={index} onClick={() => navigate(`/building/${building.id}`)}>
-                            <p>{building.name}</p>
-                            <p>{building.address}</p>
-                            <p>{building.postalCode}</p>
-                            <p>{building.country}</p>
+                    rooms.map((room, index) => (
+                        <div className={'row'} key={index} onClick={() => navigate(`/building/${room.id}`)}>
+                            <p>{room.name}</p>
                         </div>
                     ))
                 )}
@@ -178,21 +154,14 @@ const HomePage = () => {
                 <button className={'primary-button'} onClick={() => {
                     setShowPopup(!showPopup);
                     setError('')
-                }}>Add building
+                }}>Add room
                 </button>
-                <div className='row'>
-                    <button className={'secondary-button'} onClick={() => navigate('/account')}>Account</button>
-                    <button className={'tertiary-button'} onClick={() => {
-                        localStorage.removeItem('jwtToken');
-                        navigate('/login')
-                    }}>Log out
-                    </button>
-                </div>
+
                 {showPopup && (
                     <>
                         <div className='popup'>
                             <div className='form-container'>
-                                <h1>Add building</h1>
+                                <h1>Add room</h1>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
                                     handleSubmit();
@@ -204,28 +173,6 @@ const HomePage = () => {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                     />
-                                    <br/>
-                                    <input
-                                        type='text'
-                                        placeholder='Address'
-                                        value={address}
-                                        onChange={(e) => setAddress(e.target.value)}
-                                    />
-                                    <br/>
-                                    <input
-                                        type='text'
-                                        placeholder='Postal code'
-                                        value={postalCode}
-                                        onChange={(e) => setPostalCode(e.target.value)}
-                                    />
-                                    <br/>
-                                    <input
-                                        type='text'
-                                        placeholder='Country'
-                                        value={country}
-                                        onChange={(e) => setCountry(e.target.value)}
-                                    />
-                                    <br/>
                                     <button className={'primary-button form-button'} type='submit' disabled={loading}>
                                         {loading ? 'Adding...' : 'Add'}
                                     </button>
@@ -245,4 +192,4 @@ const HomePage = () => {
     );
 };
 
-export default HomePage;
+export default RoomPage;

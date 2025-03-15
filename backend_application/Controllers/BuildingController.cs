@@ -32,11 +32,9 @@ public class BuildingController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             var buildings = await _context.Buildings
-                .Include(b => b.Rooms)
-                .Include(b => b.Users)
                 .Where(b => b.Users.Any(u => u.Id == user.Id))
                 .ToListAsync();
     
@@ -60,19 +58,36 @@ public class BuildingController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<BuildingGetDto>> GetById(int id)
     {
-        var building = await _context.Buildings
-            .Include(b => b.Rooms)
-            .Include(b => b.Users)
-            .FirstOrDefaultAsync(b => b.Id == id);
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
 
-        if (building == null)
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound("Building not found.");
+            return Unauthorized("Authorization token is missing.");
         }
 
-        var buildingDto = BuildingMappers.BuildBuildingGetDto(building);
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         
-        return Ok(buildingDto);
+        try
+        {
+            var user = await TokenValidator.GetUserFromToken(token, _context);
+
+            var building = await _context.Buildings
+                .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id).FirstOrDefaultAsync();
+    
+            if (building != null)
+            {
+                var buildingDto = new BuildingGetDto();
+                
+                buildingDto = BuildingMappers.BuildBuildingGetDto(building);
+                
+                return Ok(buildingDto);
+            }
+            return Ok();
+        }
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
     
     [HttpGet("{id:int}/users")]
@@ -110,7 +125,7 @@ public class BuildingController : ControllerBase
         
         try
         {
-            var user = await GetUserFromTokenClass.GetUserFromToken(token, _context);
+            var user = await TokenValidator.GetUserFromToken(token, _context);
             
             var buildingModel = await BuildingMappers.BuildBuildingPost(buildingDto, user, _context);
             await _context.Buildings.AddAsync(buildingModel);

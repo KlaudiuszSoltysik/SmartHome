@@ -1,15 +1,21 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:web_socket_channel/io.dart';
 
 void main() {
-  runApp(MyApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]).then((
+    _,
+  ) {
+    runApp(MyApp());
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -65,7 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final response = await http.post(
-      Uri.parse('http://10.0.2.2:5050/users/login'),
+      // Uri.parse('http://10.0.2.2:5050/users/login'),
+      Uri.parse('http://192.168.8.21:5050/users/login'),
       body: jsonEncode({
         'email': _emailController.text,
         'password': _passwordController.text,
@@ -125,12 +132,13 @@ class _HomeScreenState extends State<HomeScreen> {
   int? selectedRoomId;
   IOWebSocketChannel? _channel;
   bool isStreaming = false;
-  int selectedId = 0;
+  int cameraId = 0;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
+    WakelockPlus.enable();
     _fetchBuildings();
   }
 
@@ -142,7 +150,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     _cameraController = CameraController(
       backCamera,
-      ResolutionPreset.low,
+      ResolutionPreset.medium,
       enableAudio: true,
     );
 
@@ -156,7 +164,8 @@ class _HomeScreenState extends State<HomeScreen> {
     token = prefs.getString('jwt_token');
 
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:5050/buildings'),
+      // Uri.parse('http://10.0.2.2:5050/buildings'),
+      Uri.parse('http://192.168.8.21:5050/buildings'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -172,7 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchRooms(int buildingId) async {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:5050/buildings/$buildingId/rooms'),
+      // Uri.parse('http://10.0.2.2:5050/buildings/$buildingId/rooms'),
+      Uri.parse('http://192.168.8.21:5050/buildings/$buildingId/rooms'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -202,21 +212,29 @@ class _HomeScreenState extends State<HomeScreen> {
       isStreaming = true;
     });
 
-    _channel = IOWebSocketChannel.connect("ws://10.0.2.2:5050/send");
+    // _channel = IOWebSocketChannel.connect("ws://10.0.2.2:5050/send");
+    _channel = IOWebSocketChannel.connect("ws://192.168.8.21:5050/send");
 
     int lastFrameTime = 0;
+
+    _channel!.sink.add(
+      jsonEncode({
+        "token": token,
+        "building_id": selectedBuildingId,
+        "room_id": selectedRoomId,
+        "camera_id": cameraId,
+      }),
+    );
 
     _cameraController!.startImageStream((CameraImage image) {
       if (!isStreaming) return;
 
       int now = DateTime.now().millisecondsSinceEpoch;
 
-      if (now - lastFrameTime < 100) return;
+      if (now - lastFrameTime < 50) return;
       lastFrameTime = now;
 
       Uint8List imageBytes = _convertImageToBytes(image);
-
-      _channel!.sink.add(jsonEncode({}));
 
       _channel!.sink.add(imageBytes);
     });
@@ -286,6 +304,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _cameraController?.dispose();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -296,84 +315,88 @@ class _HomeScreenState extends State<HomeScreen> {
         title: Text('Live Camera'),
         actions: [IconButton(icon: Icon(Icons.logout), onPressed: _logout)],
       ),
-      body: Column(
-        children: [
-          Expanded(
-            flex: 2,
-            child:
-                _cameraController == null ||
-                        !_cameraController!.value.isInitialized
-                    ? Center(child: CircularProgressIndicator())
-                    : CameraPreview(_cameraController!),
-          ),
-          Expanded(
-            flex: 1,
-            child:
-                _buildings.isEmpty
-                    ? Center(child: Text('No buildings found'))
-                    : Column(
-                      children: [
-                        DropdownButton<int>(
-                          value: selectedBuildingId,
-                          onChanged: (int? newValue) {
-                            setState(() {
-                              selectedBuildingId = newValue;
-                            });
-                            _fetchRooms(newValue!);
-                          },
-                          items:
-                              _buildings.map<DropdownMenuItem<int>>((building) {
-                                return DropdownMenuItem<int>(
-                                  value: building['id'],
-                                  child: Text(building['name']),
-                                );
-                              }).toList(),
-                        ),
-                        _rooms.isEmpty
-                            ? Center(child: Text('No rooms found'))
-                            : DropdownButton<int>(
-                              value: selectedRoomId,
-                              onChanged: (int? newValue) {
-                                setState(() {
-                                  selectedRoomId = newValue;
-                                });
-                                _fetchRooms(newValue!);
-                              },
-                              items:
-                                  _rooms.map<DropdownMenuItem<int>>((room) {
-                                    return DropdownMenuItem<int>(
-                                      value: room['id'],
-                                      child: Text(room['name']),
-                                    );
-                                  }).toList(),
-                            ),
-                        DropdownButton<int>(
-                          value: selectedId,
-                          items: List.generate(5, (index) {
-                            return DropdownMenuItem(
-                              value: index,
-                              child: Text(index.toString()),
-                            );
-                          }),
-                          onChanged: (int? newValue) {
-                            setState(() {
-                              selectedId = newValue!;
-                            });
-                          },
-                        ),
-                        !isStreaming
-                            ? ElevatedButton(
-                              onPressed: _startStreaming,
-                              child: Text('Start'),
-                            )
-                            : ElevatedButton(
-                              onPressed: _stopStreaming,
-                              child: Text('Stop'),
-                            ),
-                      ],
-                    ),
-          ),
-        ],
+      body: Center(
+        child: Column(
+          children: [
+            Expanded(
+              flex: 2,
+              child:
+                  _cameraController == null ||
+                          !_cameraController!.value.isInitialized
+                      ? CircularProgressIndicator()
+                      : CameraPreview(_cameraController!),
+            ),
+            Expanded(
+              flex: 1,
+              child:
+                  _buildings.isEmpty
+                      ? Center(child: Text('No buildings found'))
+                      : Column(
+                        children: [
+                          DropdownButton<int>(
+                            value: selectedBuildingId,
+                            onChanged: (int? newValue) {
+                              setState(() {
+                                selectedBuildingId = newValue;
+                              });
+                              _fetchRooms(newValue!);
+                            },
+                            items:
+                                _buildings.map<DropdownMenuItem<int>>((
+                                  building,
+                                ) {
+                                  return DropdownMenuItem<int>(
+                                    value: building['id'],
+                                    child: Text(building['name']),
+                                  );
+                                }).toList(),
+                          ),
+                          _rooms.isEmpty
+                              ? Center(child: Text('No rooms found'))
+                              : DropdownButton<int>(
+                                value: selectedRoomId,
+                                onChanged: (int? newValue) {
+                                  setState(() {
+                                    selectedRoomId = newValue;
+                                  });
+                                  _fetchRooms(newValue!);
+                                },
+                                items:
+                                    _rooms.map<DropdownMenuItem<int>>((room) {
+                                      return DropdownMenuItem<int>(
+                                        value: room['id'],
+                                        child: Text(room['name']),
+                                      );
+                                    }).toList(),
+                              ),
+                          DropdownButton<int>(
+                            value: cameraId,
+                            items: List.generate(5, (index) {
+                              return DropdownMenuItem(
+                                value: index,
+                                child: Text(index.toString()),
+                              );
+                            }),
+                            onChanged: (int? newValue) {
+                              setState(() {
+                                cameraId = newValue!;
+                              });
+                            },
+                          ),
+                          !isStreaming
+                              ? ElevatedButton(
+                                onPressed: _startStreaming,
+                                child: Text('Start'),
+                              )
+                              : ElevatedButton(
+                                onPressed: _stopStreaming,
+                                child: Text('Stop'),
+                              ),
+                        ],
+                      ),
+            ),
+          ],
+        ),
       ),
     );
   }

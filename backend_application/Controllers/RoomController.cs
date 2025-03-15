@@ -1,6 +1,7 @@
 ﻿using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Mappers;
+using backend_application.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,23 +21,36 @@ public class RoomController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IEnumerable<RoomGetDto>>> GetAll(int buildingId)
     {
-        var building = await _context.Buildings
-            .Include(b => b.Rooms)
-            .ThenInclude(r => r.Devices)
-            .FirstOrDefaultAsync(b => b.Id == buildingId);
-        
-        if (building == null || !building.Rooms.Any())
+        var authorizationHeader = Request.Headers["Authorization"].ToString();
+
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return NotFound("No rooms found.");
+            return Unauthorized("Authorization token is missing.");
         }
 
-        var rooms = building.Rooms.ToList();
-        var roomsDtos = new List<RoomGetDto>();
-        foreach (var room in rooms)
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        
+        try
         {
-            roomsDtos.Add(RoomMappers.BuildRoomGetDto(room));
+            var user = await TokenValidator.GetUserFromToken(token, _context);
+            
+            var rooms = user.Buildings.FirstOrDefault(b => b.Id == buildingId).Rooms;
+    
+            if (rooms.Any())
+            {
+                var roomDtos = new List<RoomGetDto>();
+                foreach (var room in rooms)
+                {
+                    roomDtos.Add(RoomMappers.BuildRoomGetDto(room));
+                }
+                return Ok(roomDtos);
+            }
+            return Ok();
         }
-        return Ok(roomsDtos);
+        catch (Exception e)
+        {
+            return Unauthorized(e.Message);
+        }
     }
     
     [HttpGet("{id:int}")]
