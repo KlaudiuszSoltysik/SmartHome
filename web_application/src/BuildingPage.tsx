@@ -8,6 +8,10 @@ interface Building {
     postalCode: string;
     country: string;
 }
+
+interface User {
+    name: string;
+}
 interface Room {
     id: string;
     name: string;
@@ -17,6 +21,7 @@ const RoomPage = () => {
     const {buildingId} = useParams();
 
     const [building, setBuilding] = useState<Building>();
+    const [users, setUsers] = useState<User[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [error, setError] = useState('');
     const [roomName, setRoomName] = useState('');
@@ -36,6 +41,7 @@ const RoomPage = () => {
         }
 
         fetchBuilding();
+        fetchUsers();
         fetchRooms();
         refreshToken();
     }, [navigate]);
@@ -96,6 +102,39 @@ const RoomPage = () => {
             const responseJson = await response.json();
 
             setBuilding(responseJson);
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError('An unknown error occurred');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const fetchUsers = async () => {
+        setError('');
+        setLoading(true);
+
+        try {
+            const response = await fetch(`http://localhost:5050/buildings/${buildingId}/users`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                },
+            });
+
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                setError(errorMessage || 'Failed to get users.');
+                throw new Error(errorMessage || 'Failed to get users.');
+            }
+
+            const responseJson = await response.json();
+
+            setUsers(responseJson);
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
@@ -284,6 +323,15 @@ const RoomPage = () => {
                 ) : (
                     <p>No building data available</p>
                 )}
+                {loading ? (
+                    <div className={'loader'}></div>
+                ) : (
+                    users.map((user, index) => (
+                        <div className={'row'} key={index}>
+                            <p>{user.name}</p>
+                        </div>
+                    ))
+                )}
                 <div className='row'>
                     <button className={'secondary-button'} onClick={() => setShowBuildingPopup(!showBuildingPopup)}>Edit
                         building
@@ -295,6 +343,7 @@ const RoomPage = () => {
                         Delete building
                     </button>
                 </div>
+
                 <h1>Rooms</h1>
                 {loading ? (
                     <div className={'loader'}></div>
