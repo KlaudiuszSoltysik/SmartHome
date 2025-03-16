@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.IdentityModel.Tokens.Jwt;
+﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using backend_application.Data;
@@ -44,11 +43,12 @@ public class TokenValidator
             return null;
         }
     }
+    
     public static async Task<User> GetUserFromToken(string token, ApplicationDbContext context)
     {
         if (string.IsNullOrEmpty(token))
         {
-            throw new EvaluateException("No token provided.");
+            return null;
         }
         
         var claimsPrincipal = new JwtSecurityTokenHandler().ReadJwtToken(token);
@@ -56,13 +56,13 @@ public class TokenValidator
 
         if (string.IsNullOrEmpty(userIdFromToken))
         {
-            throw new EvaluateException("Token is invalid.");
+            return null;
         }
         
         var expClaim = claimsPrincipal?.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Exp);
         if (expClaim != null && DateTime.UtcNow >= DateTimeOffset.FromUnixTimeSeconds(long.Parse(expClaim.Value)).UtcDateTime)
         {
-            throw new EvaluateException("Token is expired.");
+            return null;
         }
         
         var returnUser = await context.Users
@@ -70,5 +70,5 @@ public class TokenValidator
             .FirstOrDefaultAsync(u => u.Id == int.Parse(userIdFromToken));
         
         return returnUser!;
-    }
+    } 
 }

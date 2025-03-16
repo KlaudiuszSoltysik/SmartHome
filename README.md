@@ -26,3 +26,5 @@ validated, and errors are displayed in a clear and readable format.
 
 Although the mobile application, which turns a smartphone into a camera, offers only basic functionality, it has also
 been thoroughly secured against potential abuses.
+
+Web application is hosted on my own server and domain, that also belongs to me, at 260824.xyz/smart-home.

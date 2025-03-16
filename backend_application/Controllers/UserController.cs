@@ -28,94 +28,65 @@ public class UserController : ControllerBase
         _tokenValidator = tokenValidator;
     }
     
-    [HttpGet]
-    public async Task<ActionResult<User>> GetLoggedUser()
+    private async Task<(ActionResult?, User?)> ValidateAndGetUser(HttpRequest request)
     {
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
+        var authorizationHeader = request.Headers["Authorization"].ToString();
 
         if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
         {
-            return Unauthorized("Authorization token is missing.");
+            return (Unauthorized("Authorization token is missing."), null);
         }
 
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        
-        try
+        var user = await TokenValidator.GetUserFromToken(token, _context);
+
+        if (user == null)
         {
-            var user = await TokenValidator.GetUserFromToken(token, _context);
-            
-            var userDto = UserMappers.BuildUserGetDtoFull(user);
-            return Ok(userDto);
+            return (NotFound("User not found."), null);
         }
-        catch (Exception e)
-        {
-            return Unauthorized(e.Message);
-        }
+
+        return (null, user); 
     }
     
-    [HttpGet("confirm-email")]
-    public async Task<IActionResult> ConfirmEmail(int userId, string code)
+    [HttpGet]
+    public async Task<ActionResult<User>> GetLoggedUser()
     {
-        try
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
         {
-            var user = await _context.Users.FindAsync(userId);
-
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-            
-            if (user.ConfirmationCode != code)
-            {
-                return BadRequest("Invalid confirmation code.");
-            }
-            
-            user.IsActive = true;
-            user.ConfirmationCode = null;
-            
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-
-            return Redirect("http://localhost:5173/login");
+            return errorResult;
         }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        
+        var userDto = UserMappers.BuildUserGetDtoFull(user);
+        return Ok(userDto);
     }
 
     [HttpPost("register")]
     public async Task<ActionResult<UserGetDtoFull>> PostRegister([FromBody] UserPostRegisterDto userDto)
     {
-        try
-        {
-            var userModel = await UserMappers.BuildUserPostRegister(userDto, _context);
-            
-            var confirmationCode = Guid.NewGuid().ToString();
-            
-            userModel.ConfirmationCode = confirmationCode;
-            
-            await _context.Users.AddAsync(userModel);
-            await _context.SaveChangesAsync();
-            
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userModel.Email);
+        var userModel = await UserMappers.BuildUserPostRegister(userDto, _context);
+        
+        var confirmationCode = Guid.NewGuid().ToString();
+        
+        userModel.ConfirmationCode = confirmationCode;
+        
+        await _context.Users.AddAsync(userModel);
+        await _context.SaveChangesAsync();
+        
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userModel.Email);
 
-            var callbackUrl = Url.Action(
-                action: "ConfirmEmail",
-                controller: "User",
-                values: new { userId = user.Id, code = confirmationCode },
-                protocol: HttpContext.Request.Scheme
-            );
-            
-            await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
-                $"Confirm your email <a href='{callbackUrl}'>here</a>.");
+        var callbackUrl = Url.Action(
+            action: "ConfirmEmail",
+            controller: "User",
+            values: new { userId = user.Id, code = confirmationCode },
+            protocol: HttpContext.Request.Scheme
+        );
+        
+        await _emailSender.SendEmailAsync(user.Email, "Confirm your email",
+            $"Confirm your email <a href='{callbackUrl}'>here</a>.");
 
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        return Ok();
     }
     
     [HttpPost("login")]
@@ -124,6 +95,7 @@ public class UserController : ControllerBase
         var user = await _context.Users
             .Include(u => u.Buildings)
             .FirstOrDefaultAsync(u => u.Email == userDto.Email);
+        
         if (user == null)
         {
             return NotFound("Email address not found.");
@@ -136,12 +108,14 @@ public class UserController : ControllerBase
         
         var passwordHasher = new PasswordHasher<User>();
         var verificationResult = passwordHasher.VerifyHashedPassword(user, user.Password, userDto.Password);
+        
         if (verificationResult != PasswordVerificationResult.Success)
         {
             return Unauthorized("Invalid password.");
         }
         
         var token = _tokenGenerator.GenerateToken(user.Id);
+        
         return Ok(new Dictionary<string, dynamic>
         {
             {"user", UserMappers.BuildUserGetDtoFull(user)},
@@ -152,101 +126,100 @@ public class UserController : ControllerBase
     [HttpGet("refresh")]
     public async Task<ActionResult> RefreshToken()
     {
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
         {
-            return Unauthorized("Authorization token is missing.");
+            return errorResult;
         }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         
-        try
+        var newToken = _tokenGenerator.GenerateToken(user.Id);
+        
+        return Ok(new Dictionary<string, dynamic> { {"token", newToken} });
+    }
+    
+    [HttpGet("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail(int userId, string code)
+    {
+        var user = await _context.Users.FindAsync(userId);
+
+        if (user == null)
         {
-            var user = await TokenValidator.GetUserFromToken(token, _context);
-            
-            var newToken = _tokenGenerator.GenerateToken(user.Id);
-            return Ok(new Dictionary<string, dynamic>
-            { {"token", newToken} });
+            return NotFound("User not found.");
         }
-        catch (Exception e)
+        
+        if (user.ConfirmationCode != code)
         {
-            return Unauthorized(e.Message);
+            return BadRequest("Invalid confirmation code.");
         }
+        
+        user.IsActive = true;
+        user.ConfirmationCode = null;
+        
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+
+        return Redirect("http://localhost:5173/login");
     }
     
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] string email)
     {
-        try
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        
+        if (user == null)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
-            
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-            
-            var resetToken = Guid.NewGuid().ToString();
-            user.ResetPasswordToken = resetToken;
-            user.ResetPasswordExpires = DateTime.UtcNow.AddMinutes(15);
-   
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
-            
-            var frontendUrl = "http://localhost:5173/reset-password";
-            var resetLink = $"{frontendUrl}?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
-            
-            var emailBody = $@"
-            <p>Click the link below to reset your password:</p>
-            <a href='{resetLink}'>Reset Password</a>
-            <p>If you didn't request this, please ignore this email.</p>";
-            
-            await _emailSender.SendEmailAsync(user.Email, "Reset Password", emailBody);
-    
-            return Ok();
+            return NotFound("User not found.");
         }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        
+        var resetToken = Guid.NewGuid().ToString();
+        user.ResetPasswordToken = resetToken;
+        user.ResetPasswordExpires = DateTime.UtcNow.AddMinutes(15);
+
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+        
+        var frontendUrl = "http://localhost:5173/reset-password";
+        var resetLink = $"{frontendUrl}?token={resetToken}&email={Uri.EscapeDataString(user.Email)}";
+        
+        var emailBody = $@"
+        <p>Click the link below to reset your password:</p>
+        <a href='{resetLink}'>Reset Password</a>
+        <p>If you didn't request this, please ignore this email.</p>";
+        
+        await _emailSender.SendEmailAsync(user.Email, "Reset Password", emailBody);
+
+        return Ok();
     }
     
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] UserResetPasswordDto userDto)
     {
-        try
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userDto.Email);
+        
+        if (user == null)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == userDto.Email);
-            
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-            
-            if (user.ResetPasswordToken != userDto.Token || DateTime.UtcNow > user.ResetPasswordExpires)
-            {
-                return BadRequest("Invalid or expired reset token.");
-            }
-            
-            ValidatePasswordClass.ValidatePassword(userDto.Password);
+            return NotFound("User not found.");
+        }
         
-            var passwordHasher = new PasswordHasher<User>();
+        if (user.ResetPasswordToken != userDto.Token || DateTime.UtcNow > user.ResetPasswordExpires)
+        {
+            return BadRequest("Invalid or expired reset token.");
+        }
         
-            user.Password = passwordHasher.HashPassword(user, userDto.Password);
-            
-            user.ResetPasswordToken = null;
-            user.ResetPasswordExpires = null;
-            
-            _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+        ValidatePasswordClass.ValidatePassword(userDto.Password);
     
-            return Ok();
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+        var passwordHasher = new PasswordHasher<User>();
+    
+        user.Password = passwordHasher.HashPassword(user, userDto.Password);
+        
+        user.ResetPasswordToken = null;
+        user.ResetPasswordExpires = null;
+        
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
     
     [HttpPost("add-user")]
@@ -255,55 +228,39 @@ public class UserController : ControllerBase
         var buildingId = addUserDto.BuildingId;
         var email = addUserDto.Email;
         
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
         {
-            return Unauthorized("Authorization token is missing.");
+            return errorResult;
         }
 
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        if (user.Buildings.All(b => b.Id != buildingId))
+        {
+            return BadRequest("Building not found.");
+        }
+
+        if (_context.Users.All(u => u.Email != email))
+        {
+            var subject = "Invitation to create account";
+            var body = $"Create free account at <a href='http://localhost:5173/register'>SmartHome</a>";
         
-        try
-        {
-            var user = await TokenValidator.GetUserFromToken(token, _context);
-            
-            if (user == null)
-            {
-                return NotFound("User not found.");
-            }
-
-            if (user.Buildings.All(b => b.Id != buildingId))
-            {
-                return BadRequest("Building not found.");
-            }
-
-            if (_context.Users.All(u => u.Email != email))
-            {
-                var subject = "Invitation to create account";
-                var body = $"Create free account at <a href='http://localhost:5173/register'>SmartHome</a>";
-            
-                await _emailSender.SendEmailAsync(email, subject, body);
-            }
-            
-            var invitationToken = _tokenGenerator.GenerateInvitationToken(email, buildingId);
-
-            var invitationLink = Url.Action(
-                action: "AcceptInvitation",
-                controller: "User",
-                values: new { token = invitationToken },
-                protocol: HttpContext.Request.Scheme
-            );
-                
-            var subject2 = "Invitation to Join Building";
-            var body2 = $"You have been invited to join a building. Click the following link to accept the invitation: <a href='{invitationLink}'>Accept Invitation</a>";
-            
-            await _emailSender.SendEmailAsync(email, subject2, body2);
+            await _emailSender.SendEmailAsync(email, subject, body);
         }
-        catch (Exception e)
-        {
-            return Unauthorized(e.Message);
-        }
+        
+        var invitationToken = _tokenGenerator.GenerateInvitationToken(email, buildingId);
+
+        var invitationLink = Url.Action(
+            action: "AcceptInvitation",
+            controller: "User",
+            values: new { token = invitationToken },
+            protocol: HttpContext.Request.Scheme
+        );
+            
+        var subject2 = "Invitation to Join Building";
+        var body2 = $"You have been invited to join a building. Click the following link to accept the invitation: <a href='{invitationLink}'>Accept Invitation</a>";
+        
+        await _emailSender.SendEmailAsync(email, subject2, body2);
 
         return Ok();
     }
@@ -351,66 +308,44 @@ public class UserController : ControllerBase
     [HttpPut]
     public async Task<ActionResult<UserGetDtoFull>> Put([FromBody] UserPutDto userDto)
     {
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
         {
-            return Unauthorized("Authorization token is missing.");
+            return errorResult;
         }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         
-        try
-        {
-            var user = await TokenValidator.GetUserFromToken(token, _context);
-            
-            user.Name = userDto.Name;
-        
-            await _context.SaveChangesAsync();
-        
-            return Ok(UserMappers.BuildUserGetDtoFull(user));
-        }
-        catch (Exception e)
-        {
-            return Unauthorized(e.Message);
-        }
+        user.Name = userDto.Name;
+    
+        await _context.SaveChangesAsync();
+    
+        return Ok(UserMappers.BuildUserGetDtoFull(user));
     }
     
     [HttpDelete]
     public async Task<ActionResult> Delete()
     {
-        var authorizationHeader = Request.Headers["Authorization"].ToString();
-
-        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-        {
-            return Unauthorized("Authorization token is missing.");
-        }
-
-        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
-        
-        try
-        {
-            var user = await TokenValidator.GetUserFromToken(token, _context);
-            
-            foreach (var building in user.Buildings.ToList())
-            {
-                var userCountInBuilding = await _context.BuildingUser
-                    .CountAsync(bu => bu.BuildingId == building.Id);
-
-                if (userCountInBuilding == 1)
-                {
-                    _context.Buildings.Remove(building);
-                }
-            }
-        
-            _context.Users.Remove(user);
-            await _context.SaveChangesAsync();
+        var (errorResult, user) = await ValidateAndGetUser(Request);
     
-            return Ok();
-        }
-        catch (Exception e)
+        if (errorResult != null)
         {
-            return Unauthorized(e.Message);
+            return errorResult;
         }
+        
+        foreach (var building in user.Buildings.ToList())
+        {
+            var userCountInBuilding = await _context.BuildingUser
+                .CountAsync(bu => bu.BuildingId == building.Id);
+
+            if (userCountInBuilding == 1)
+            {
+                _context.Buildings.Remove(building);
+            }
+        }
+    
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync();
+
+        return Ok();
     }
 }

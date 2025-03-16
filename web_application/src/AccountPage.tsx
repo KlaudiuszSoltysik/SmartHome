@@ -37,7 +37,7 @@ const AccountPage = () => {
         }
     };
 
-    const handleSubmit = async () => {
+    const editUser = async () => {
         if (!name) {
             setError('Name is required.');
             return;
@@ -167,7 +167,7 @@ const AccountPage = () => {
                                 <h1>Edit name</h1>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
-                                    handleSubmit();
+                                    editUser();
                                 }}
                                       noValidate={true}>
                                     <input

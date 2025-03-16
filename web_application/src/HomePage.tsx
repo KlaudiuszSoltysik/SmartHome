@@ -85,7 +85,8 @@ const HomePage = () => {
                 throw new Error(errorMessage || 'Failed to get buildings.');
             }
 
-            const responseJson = await response.json();
+            const responseText = await response.text();
+            const responseJson = responseText ? JSON.parse(responseText) : [];
 
             if (responseJson.length > 0) {
                 setBuildings(responseJson);
