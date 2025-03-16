@@ -1,6 +1,12 @@
 ﻿import {useEffect, useRef, useState} from "react";
 
-function Stream() {
+interface StreamProps {
+    buildingId: number;
+    roomId: number;
+    cameraId: number;
+}
+
+function Stream({buildingId, roomId, cameraId}: StreamProps) {
     const [imageSrc, setImageSrc] = useState<string | null>(null);
     const ws = useRef<WebSocket | null>(null);
 
@@ -12,9 +18,9 @@ function Stream() {
                 console.log("WebSocket connection established.");
                 const message = {
                     token: localStorage.getItem("jwtToken"),
-                    building_id: 1,
-                    room_id: 1,
-                    camera_id: 0,
+                    building_id: buildingId,
+                    room_id: roomId,
+                    camera_id: cameraId,
                 };
                 ws.current?.send(JSON.stringify(message));
             };
@@ -49,12 +55,16 @@ function Stream() {
             }
             if (imageSrc) URL.revokeObjectURL(imageSrc);
         };
-    }, []);
+    }, [buildingId, roomId, cameraId]);
 
     return (
         <div>
             {imageSrc ? (
-                <img src={imageSrc} alt="Stream" style={{width: "100%"}}/>
+                <img
+                    src={imageSrc}
+                    alt="Stream"
+                    style={{width: "600px", height: "auto"}}
+                />
             ) : (
                 <p>Waiting for stream...</p>
             )}

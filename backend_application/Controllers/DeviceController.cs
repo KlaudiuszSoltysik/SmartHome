@@ -1,6 +1,8 @@
 ﻿using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Mappers;
+using backend_application.Models;
+using backend_application.Utilities;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,46 +18,100 @@ public class DeviceController : ControllerBase
     {
         _context = context;
     }
+    
+    private async Task<(ActionResult?, User?)> ValidateAndGetUser(HttpRequest request)
+    {
+        var authorizationHeader = request.Headers["Authorization"].ToString();
+        
+        if (string.IsNullOrEmpty(authorizationHeader) || !authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return (Unauthorized("Authorization token is missing."), null);
+        }
+
+        var token = authorizationHeader.Substring("Bearer ".Length).Trim();
+        var user = await TokenValidator.GetUserFromToken(token, _context);
+
+        if (user == null)
+        {
+            return (NotFound("User not found."), null);
+        }
+
+        return (null, user); 
+    }
 
     [HttpGet]
     public async Task<ActionResult<IEnumerable<DeviceGetDto>>> GetAll(int roomId)
     {
-        var room = await _context.Rooms
-            .Include(r => r.Devices)
-            .FirstOrDefaultAsync(r => r.Id == roomId);
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
         
-        if (room == null || !room.Devices.Any())
+        var devices = await _context.Buildings
+            .Where(b => b.Users.Contains(user))
+            .SelectMany(b => b.Rooms)
+            .Where(r => r.Id == roomId)
+            .SelectMany(r => r.Devices)
+            .ToListAsync();  
+        
+        if (devices.Count == 0)
         {
             return NotFound("No devices found.");
         }
-
-        var devices = room.Devices.ToList();
+        
         var deviceDtos = new List<DeviceGetDto>();
+        
         foreach (var device in devices)
         {
             deviceDtos.Add(DeviceMappers.BuildDeviceGetDto(device));
         }
+        
         return Ok(deviceDtos);
     }
     
     [HttpGet("{id:int}")]
     public async Task<ActionResult<DeviceGetDto>> GetById(int id)
     {
-        var device = await _context.Devices.FindAsync(id);
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
 
+        var device = await _context.Buildings
+            .Where(b => b.Users.Contains(user))
+            .SelectMany(b => b.Rooms)
+            .SelectMany(r => r.Devices)
+            .FirstOrDefaultAsync(d => d.Id == id);
+        
         if (device == null)
         {
             return NotFound("Device not found.");
         }
         
         var deviceDto = DeviceMappers.BuildDeviceGetDto(device);
+        
         return Ok(deviceDto);
     }
     
     [HttpPost]
-    public async Task<ActionResult<DeviceGetDto>> Post(int buildingId, int roomId, [FromBody] DevicePostDto deviceDto)
+    public async Task<ActionResult<DeviceGetDto>> Post(int roomId, [FromBody] DevicePostDto deviceDto)
     {
-        var room = await _context.Rooms.FindAsync(roomId);
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
+
+        var room = await _context.Buildings
+            .Include(b => b.Rooms)
+            .Where(b => b.Users.Contains(user))
+            .SelectMany(b => b.Rooms)
+            .FirstOrDefaultAsync(r => r.Id == roomId);
         
         if (room == null)
         {
@@ -63,17 +119,29 @@ public class DeviceController : ControllerBase
         }
         
         var deviceModel = DeviceMappers.BuildDevicePostDto(room, deviceDto);
+        
         await _context.Devices.AddAsync(deviceModel); 
         await _context.SaveChangesAsync();
-        var deviceGetDto = DeviceMappers.BuildDeviceGetDto(deviceModel);
-        return CreatedAtAction(nameof(GetById), new {  buildingId, roomId, deviceModel.Id }, deviceGetDto);
+        
+        return Ok();
     }
     
     [HttpPut("{id:int}")]
     public async Task<ActionResult<DeviceGetDto>> Put(int id, [FromBody] DevicePutDto deviceDto)
     {
-        var device = await _context.Devices.FindAsync(id);
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
 
+        var device = await _context.Buildings
+            .Where(b => b.Users.Contains(user)) 
+            .SelectMany(b => b.Rooms)
+            .SelectMany(r => r.Devices)
+            .FirstOrDefaultAsync(d => d.Id == id);
+        
         if (device == null)
         {
             return NotFound("Device not found.");
@@ -83,13 +151,24 @@ public class DeviceController : ControllerBase
         
         await _context.SaveChangesAsync();
         
-        return Ok(DeviceMappers.BuildDeviceGetDto(device));
+        return Ok();
     }
 
     [HttpDelete("{id:int}")]
     public async Task<ActionResult> Delete(int id)
     {
-        var device = await _context.Devices.FindAsync(id);
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
+
+        var device = await _context.Buildings
+            .Where(b => b.Users.Contains(user)) 
+            .SelectMany(b => b.Rooms)
+            .SelectMany(r => r.Devices)
+            .FirstOrDefaultAsync(d => d.Id == id);
 
         if (device == null)
         {

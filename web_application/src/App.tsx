@@ -8,7 +8,7 @@ import AccountPage from './AccountPage';
 import ForgotPasswordPage from './ForgotPasswordPage.tsx';
 import ResetPasswordPage from './ResetPasswordPage';
 import BuildingPage from "./BuildingPage.tsx";
-import Stream from "./Stream.tsx";
+import RoomPage from "./RoomPage.tsx";
 
 const App: React.FC = () => {
     return (
@@ -20,8 +20,8 @@ const App: React.FC = () => {
                 <Route path='/forgot-password' element=<ForgotPasswordPage/>/>
                 <Route path='/reset-password' element=<ResetPasswordPage/>/>
                 <Route path='/account' element=<AccountPage/>/>
-                <Route path="/building/:buildingId" element={<BuildingPage/>}/>
-                <Route path='/stream' element=<Stream/>/>
+                <Route path="/buildings/:buildingId" element={<BuildingPage/>}/>
+                <Route path="/buildings/:buildingId/rooms/:roomId" element={<RoomPage/>}/>
                 <Route path='*' element={<Navigate to='/'/>}/>
             </Routes>
         </Router>

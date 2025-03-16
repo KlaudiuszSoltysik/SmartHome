@@ -167,7 +167,7 @@ const HomePage = () => {
                     <div className={'loader'}></div>
                 ) : (
                     buildings.map((building, index) => (
-                        <div className={'row'} key={index} onClick={() => navigate(`/building/${building.id}`)}>
+                        <div className={'row'} key={index} onClick={() => navigate(`/buildings/${building.id}`)}>
                             <p>{building.name}</p>
                             <p>{building.address}</p>
                             <p>{building.postalCode}</p>
