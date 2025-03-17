@@ -77,7 +77,8 @@ public class BuildingController : ControllerBase
         }
 
         var building = await _context.Buildings
-            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id).FirstOrDefaultAsync();
+            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id)
+            .FirstOrDefaultAsync();
 
         if (building == null)
         {
@@ -100,8 +101,9 @@ public class BuildingController : ControllerBase
         }
         
         var building = await _context.Buildings
-            .Include(b => b.Users)
-            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id).FirstOrDefaultAsync();
+            .Include(b=>b.Users)
+            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id)
+            .FirstOrDefaultAsync();
         
         if (building == null)
         {
@@ -148,7 +150,8 @@ public class BuildingController : ControllerBase
         }
 
         var building = await _context.Buildings
-            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id).FirstOrDefaultAsync();
+            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id)
+            .FirstOrDefaultAsync();
 
         if (building == null)
         {
@@ -173,7 +176,8 @@ public class BuildingController : ControllerBase
         }
 
         var building = await _context.Buildings
-            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id).FirstOrDefaultAsync();
+            .Where(b => b.Users.Any(u => u.Id == user.Id) && b.Id == id)
+            .FirstOrDefaultAsync();
 
         if (building == null)
         {

@@ -1,5 +1,5 @@
-﻿import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+﻿import {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
 
 interface Building {
     id: string;
@@ -11,21 +11,21 @@ interface Building {
 
 const HomePage = () => {
     const [buildings, setBuildings] = useState<Building[]>([]);
-    const [error, setError] = useState('');
-    const [name, setName] = useState('');
-    const [address, setAddress] = useState('');
-    const [postalCode, setPostalCode] = useState('');
-    const [country, setCountry] = useState('');
+    const [error, setError] = useState("");
+    const [name, setName] = useState("");
+    const [address, setAddress] = useState("");
+    const [postalCode, setPostalCode] = useState("");
+    const [country, setCountry] = useState("");
     const [showPopup, setShowPopup] = useState(false);
     const [loading, setLoading] = useState(true);
     
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.title = 'SmartHome - Home Page';
+        document.title = "SmartHome - Home Page";
 
-        if (!localStorage.getItem('jwtToken')) {
-            navigate('/login');
+        if (!localStorage.getItem("jwtToken")) {
+            navigate("/login");
         }
 
         fetchBuildings();
@@ -33,56 +33,39 @@ const HomePage = () => {
     }, [navigate]);
 
     const refreshToken = async () => {
-        try {
-            const response = await fetch('http://localhost:5050/users/refresh', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
-                },
-            });
+        const response = await fetch("http://localhost:5050/users/refresh", {
+            method: "GET",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+            },
+        });
 
-            if (!response.ok) {
-                return response.text().then(errorMessage => {
-                    setError(errorMessage || 'An unknown error occurred.');
-                    throw new Error(errorMessage || 'An unknown error occurred.');
-                });
-            }
+        const data = await response.json();
+        const jwtToken = data.token;
 
-            const data = await response.json();
-            const jwtToken = data.token;
-
-            if (jwtToken) {
-                localStorage.setItem('jwtToken', jwtToken);
-            } else {
-                setError('Token not found in the response.');
-            }
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError('An unknown error occurred.');
-            }
+        if (jwtToken) {
+            localStorage.setItem("jwtToken", jwtToken);
         }
     }
 
     const fetchBuildings = async () => {
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/buildings', {
-                method: 'GET',
+            const response = await fetch("http://localhost:5050/buildings", {
+                method: "GET",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to get buildings.');
-                throw new Error(errorMessage || 'Failed to get buildings.');
+                setError(errorMessage || "Failed to get buildings.");
+                throw new Error(errorMessage || "Failed to get buildings.");
             }
 
             const responseText = await response.text();
@@ -91,13 +74,13 @@ const HomePage = () => {
             if (responseJson.length > 0) {
                 setBuildings(responseJson);
             } else {
-                setError('No buildings found.');
+                setError("No buildings found.");
             }
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -106,44 +89,44 @@ const HomePage = () => {
 
     const handleSubmit = async () => {
         if (!name) {
-            setError('Name is required.');
+            setError("Name is required.");
             return;
         }
         if (!address) {
-            setError('Address is required.');
+            setError("Address is required.");
             return;
         }
         if (!postalCode) {
-            setError('Postal code is required.');
+            setError("Postal code is required.");
             return;
         }
         if (!country) {
-            setError('Country is required.');
+            setError("Country is required.");
             return;
         }
 
         if (country.length > 2) {
-            setError('Use country code.');
+            setError("Use country code.");
             return;
         }
 
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/buildings', {
-                method: 'POST',
+            const response = await fetch("http://localhost:5050/buildings", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
                 body: JSON.stringify({name, address, postalCode, country}),
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to add building.');
-                throw new Error(errorMessage || 'Failed to add building.');
+                setError(errorMessage || "Failed to add building.");
+                throw new Error(errorMessage || "Failed to add building.");
             }
 
             await fetchBuildings();
@@ -152,7 +135,7 @@ const HomePage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -160,14 +143,14 @@ const HomePage = () => {
     };
 
     return (
-        <div className='home-page'>
-            <div className='content-container'>
+        <div className="home-page">
+            <div className="content-container">
                 <h1>Your buildings</h1>
                 {loading ? (
-                    <div className={'loader'}></div>
+                    <div className={"loader"}></div>
                 ) : (
                     buildings.map((building, index) => (
-                        <div className={'row'} key={index} onClick={() => navigate(`/buildings/${building.id}`)}>
+                        <div className={"row"} key={index} onClick={() => navigate(`/buildings/${building.id}`)}>
                             <p>{building.name}</p>
                             <p>{building.address}</p>
                             <p>{building.postalCode}</p>
@@ -175,24 +158,24 @@ const HomePage = () => {
                         </div>
                     ))
                 )}
-                <p className={'error-message'} style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
-                <button className={'primary-button'} onClick={() => {
+                <p className={"error-message"} style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
+                <button className={"primary-button"} onClick={() => {
                     setShowPopup(!showPopup);
-                    setError('')
+                    setError("")
                 }}>Add building
                 </button>
-                <div className='row'>
-                    <button className={'secondary-button'} onClick={() => navigate('/account')}>Account</button>
-                    <button className={'tertiary-button'} onClick={() => {
-                        localStorage.removeItem('jwtToken');
-                        navigate('/login')
+                <div className="row">
+                    <button className={"secondary-button"} onClick={() => navigate("/account")}>Account</button>
+                    <button className={"tertiary-button"} onClick={() => {
+                        localStorage.removeItem("jwtToken");
+                        navigate("/login")
                     }}>Log out
                     </button>
                 </div>
                 {showPopup && (
                     <>
-                        <div className='popup'>
-                            <div className='form-container'>
+                        <div className="popup">
+                            <div className="form-container">
                                 <h1>Add building</h1>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
@@ -200,44 +183,44 @@ const HomePage = () => {
                                 }}
                                       noValidate={true}>
                                     <input
-                                        type='text'
-                                        placeholder='Name'
+                                        type="text"
+                                        placeholder="Name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                     />
                                     <br/>
                                     <input
-                                        type='text'
-                                        placeholder='Address'
+                                        type="text"
+                                        placeholder="Address"
                                         value={address}
                                         onChange={(e) => setAddress(e.target.value)}
                                     />
                                     <br/>
                                     <input
-                                        type='text'
-                                        placeholder='Postal code'
+                                        type="text"
+                                        placeholder="Postal code"
                                         value={postalCode}
                                         onChange={(e) => setPostalCode(e.target.value)}
                                     />
                                     <br/>
                                     <input
-                                        type='text'
-                                        placeholder='Country'
+                                        type="text"
+                                        placeholder="Country"
                                         value={country}
                                         onChange={(e) => setCountry(e.target.value)}
                                     />
                                     <br/>
-                                    <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                                        {loading ? 'Adding...' : 'Add'}
+                                    <button className={"primary-button form-button"} type="submit" disabled={loading}>
+                                        {loading ? "Adding..." : "Add"}
                                     </button>
                                 </form>
-                                <p className={'error-message'}
-                                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
+                                <p className={"error-message"}
+                                   style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
                             </div>
                         </div>
-                        <div className='backdrop' onClick={() => {
+                        <div className="backdrop" onClick={() => {
                             setShowPopup(!showPopup);
-                            setError('')
+                            setError("")
                         }}></div>
                     </>
                 )}

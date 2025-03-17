@@ -1,5 +1,5 @@
-﻿import {useEffect, useState} from 'react';
-import {useNavigate, useParams} from 'react-router-dom';
+﻿import {useEffect, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
 
 interface Building {
     id: string;
@@ -23,9 +23,9 @@ const BuildingPage = () => {
     const [building, setBuilding] = useState<Building>();
     const [users, setUsers] = useState<User[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
-    const [error, setError] = useState('');
-    const [roomName, setRoomName] = useState('');
-    const [buildingName, setBuildingName] = useState('');
+    const [error, setError] = useState("");
+    const [roomName, setRoomName] = useState("");
+    const [buildingName, setBuildingName] = useState("");
     const [showRoomPopup, setShowRoomPopup] = useState(false);
     const [showBuildingPopup, setShowBuildingPopup] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -34,69 +34,34 @@ const BuildingPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.title = 'SmartHome - Building';
+        document.title = "SmartHome - Building";
 
-        if (!localStorage.getItem('jwtToken')) {
-            navigate('/login');
+        if (!localStorage.getItem("jwtToken")) {
+            navigate("/login");
         }
 
         fetchBuilding();
         fetchUsers();
         fetchRooms();
-        refreshToken();
     }, [navigate]);
 
-    const refreshToken = async () => {
-        try {
-            const response = await fetch('http://localhost:5050/users/refresh', {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
-                },
-            });
-
-            if (!response.ok) {
-                return response.text().then(errorMessage => {
-                    setError(errorMessage || 'An unknown error occurred.');
-                    throw new Error(errorMessage || 'An unknown error occurred.');
-                });
-            }
-
-            const data = await response.json();
-            const jwtToken = data.token;
-
-            if (jwtToken) {
-                localStorage.setItem('jwtToken', jwtToken);
-            } else {
-                setError('Token not found in the response.');
-            }
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                setError(error.message);
-            } else {
-                setError('An unknown error occurred.');
-            }
-        }
-    }
-
     const fetchBuilding = async () => {
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}`, {
-                method: 'GET',
+                method: "GET",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to get building.');
-                throw new Error(errorMessage || 'Failed to get building.');
+                setError(errorMessage || "Failed to get building.");
+                throw new Error(errorMessage || "Failed to get building.");
             }
 
             const responseJson = await response.json();
@@ -106,7 +71,7 @@ const BuildingPage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -114,22 +79,22 @@ const BuildingPage = () => {
     }
 
     const fetchUsers = async () => {
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}/users`, {
-                method: 'GET',
+                method: "GET",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to get users.');
-                throw new Error(errorMessage || 'Failed to get users.');
+                setError(errorMessage || "Failed to get users.");
+                throw new Error(errorMessage || "Failed to get users.");
             }
 
             const responseJson = await response.json();
@@ -139,7 +104,7 @@ const BuildingPage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -148,27 +113,27 @@ const BuildingPage = () => {
 
     const editBuilding = async () => {
         if (!buildingName) {
-            setError('Name is required.');
+            setError("Name is required.");
             return;
         }
 
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}`, {
-                method: 'PUT',
+                method: "PUT",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
                 body: JSON.stringify({"name": buildingName}),
             });
 
             if (!response.ok) {
                 return response.text().then(errorMessage => {
-                    setError(errorMessage || 'Failed to change name.');
-                    throw new Error(errorMessage || 'Failed to change name.');
+                    setError(errorMessage || "Failed to change name.");
+                    throw new Error(errorMessage || "Failed to change name.");
                 });
             }
 
@@ -178,7 +143,7 @@ const BuildingPage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -190,26 +155,26 @@ const BuildingPage = () => {
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}`, {
-                method: 'DELETE',
+                method: "DELETE",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
             });
 
             if (!response.ok) {
                 return response.text().then(errorMessage => {
-                    setError(errorMessage || 'Failed to delete building.');
-                    throw new Error(errorMessage || 'Failed to delete building.');
+                    setError(errorMessage || "Failed to delete building.");
+                    throw new Error(errorMessage || "Failed to delete building.");
                 });
             }
 
-            navigate('/');
+            navigate("/");
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -217,22 +182,22 @@ const BuildingPage = () => {
     };
 
     const fetchRooms = async () => {
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}/rooms`, {
-                method: 'GET',
+                method: "GET",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to get rooms.');
-                throw new Error(errorMessage || 'Failed to get rooms.');
+                setError(errorMessage || "Failed to get rooms.");
+                throw new Error(errorMessage || "Failed to get rooms.");
             }
 
             const responseText = await response.text();
@@ -241,13 +206,13 @@ const BuildingPage = () => {
             if (responseJson.length > 0) {
                 setRooms(responseJson);
             } else {
-                setError('No rooms found.');
+                setError("No rooms found.");
             }
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -256,27 +221,27 @@ const BuildingPage = () => {
 
     const addRoom = async () => {
         if (!roomName) {
-            setError('Name is required.');
+            setError("Name is required.");
             return;
         }
 
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
             const response = await fetch(`http://localhost:5050/buildings/${buildingId}/rooms`, {
-                method: 'POST',
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwtToken')}`,
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
                 },
                 body: JSON.stringify({"name": roomName}),
             });
 
             if (!response.ok) {
                 const errorMessage = await response.text();
-                setError(errorMessage || 'Failed to add room.');
-                throw new Error(errorMessage || 'Failed to add room.');
+                setError(errorMessage || "Failed to add room.");
+                throw new Error(errorMessage || "Failed to add room.");
             }
 
             await fetchRooms();
@@ -285,7 +250,7 @@ const BuildingPage = () => {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -293,7 +258,7 @@ const BuildingPage = () => {
     };
 
     const handleMouseDown = () => {
-        setError('Hold the button for 3 seconds to delete.');
+        setError("Hold the button for 3 seconds to delete.");
         const newTimer = setTimeout(() => {
             deleteBuilding();
         }, 3000);
@@ -301,7 +266,7 @@ const BuildingPage = () => {
     };
 
     const handleMouseUpOrLeave = () => {
-        setError('');
+        setError("");
         if (timer) {
             clearTimeout(timer);
             setTimer(null);
@@ -309,8 +274,8 @@ const BuildingPage = () => {
     };
 
     return (
-        <div className='home-page'>
-            <div className='content-container'>
+        <div className="home-page">
+            <div className="content-container">
                 {loading ? (
                     <div className="loader"></div>
                 ) : building ? (
@@ -324,19 +289,19 @@ const BuildingPage = () => {
                     <p>No building data available</p>
                 )}
                 {loading ? (
-                    <div className={'loader'}></div>
+                    <div className={"loader"}></div>
                 ) : (
                     users.map((user, index) => (
-                        <div className={'row'} key={index}>
+                        <div className={"row"} key={index}>
                             <p>{user.name}</p>
                         </div>
                     ))
                 )}
-                <div className='row'>
-                    <button className={'secondary-button'} onClick={() => setShowBuildingPopup(!showBuildingPopup)}>Edit
+                <div className="row">
+                    <button className={"secondary-button"} onClick={() => setShowBuildingPopup(!showBuildingPopup)}>Edit
                         building
                     </button>
-                    <button className={'tertiary-button'}
+                    <button className={"tertiary-button"}
                             onMouseDown={handleMouseDown}
                             onMouseUp={handleMouseUpOrLeave}
                             onMouseLeave={handleMouseUpOrLeave}>
@@ -346,26 +311,26 @@ const BuildingPage = () => {
 
                 <h1>Rooms</h1>
                 {loading ? (
-                    <div className={'loader'}></div>
+                    <div className={"loader"}></div>
                 ) : (
                     rooms.map((room, index) => (
-                        <div className={'row'} key={index}
+                        <div className={"row"} key={index}
                              onClick={() => navigate(`/buildings/${buildingId}/rooms/${room.id}`)}>
                             <p>{room.name}</p>
                         </div>
                     ))
                 )}
-                <p className={'error-message'} style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
-                <button className={'primary-button'} onClick={() => {
+                <p className={"error-message"} style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
+                <button className={"primary-button"} onClick={() => {
                     setShowRoomPopup(!showRoomPopup);
-                    setError('')
+                    setError("")
                 }}>Add room
                 </button>
 
                 {showRoomPopup && (
                     <>
-                        <div className='popup'>
-                            <div className='form-container'>
+                        <div className="popup">
+                            <div className="form-container">
                                 <h1>Add room</h1>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
@@ -373,29 +338,29 @@ const BuildingPage = () => {
                                 }}
                                       noValidate={true}>
                                     <input
-                                        type='text'
-                                        placeholder='Name'
+                                        type="text"
+                                        placeholder="Name"
                                         value={roomName}
                                         onChange={(e) => setRoomName(e.target.value)}
                                     />
-                                    <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                                        {loading ? 'Adding...' : 'Add'}
+                                    <button className={"primary-button form-button"} type="submit" disabled={loading}>
+                                        {loading ? "Adding..." : "Add"}
                                     </button>
                                 </form>
-                                <p className={'error-message'}
-                                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
+                                <p className={"error-message"}
+                                   style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
                             </div>
                         </div>
-                        <div className='backdrop' onClick={() => {
+                        <div className="backdrop" onClick={() => {
                             setShowRoomPopup(!showRoomPopup);
-                            setError('')
+                            setError("")
                         }}></div>
                     </>
                 )}
                 {showBuildingPopup && (
                     <>
-                        <div className='popup'>
-                            <div className='form-container'>
+                        <div className="popup">
+                            <div className="form-container">
                                 <h1>Edit building</h1>
                                 <form onSubmit={(e) => {
                                     e.preventDefault();
@@ -403,22 +368,22 @@ const BuildingPage = () => {
                                 }}
                                       noValidate={true}>
                                     <input
-                                        type='text'
-                                        placeholder='Name'
+                                        type="text"
+                                        placeholder="Name"
                                         value={buildingName}
                                         onChange={(e) => setBuildingName(e.target.value)}
                                     />
-                                    <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                                        {loading ? 'Saving...' : 'Save'}
+                                    <button className={"primary-button form-button"} type="submit" disabled={loading}>
+                                        {loading ? "Saving..." : "Save"}
                                     </button>
                                 </form>
-                                <p className={'error-message'}
-                                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
+                                <p className={"error-message"}
+                                   style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
                             </div>
                         </div>
-                        <div className='backdrop' onClick={() => {
+                        <div className="backdrop" onClick={() => {
                             setShowBuildingPopup(!showBuildingPopup);
-                            setError('')
+                            setError("")
                         }}></div>
                     </>
                 )}

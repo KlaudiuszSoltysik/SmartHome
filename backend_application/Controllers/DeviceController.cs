@@ -108,7 +108,6 @@ public class DeviceController : ControllerBase
         }
 
         var room = await _context.Buildings
-            .Include(b => b.Rooms)
             .Where(b => b.Users.Contains(user))
             .SelectMany(b => b.Rooms)
             .FirstOrDefaultAsync(r => r.Id == roomId);

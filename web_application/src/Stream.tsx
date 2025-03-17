@@ -15,7 +15,6 @@ function Stream({buildingId, roomId, cameraId}: StreamProps) {
             ws.current = new WebSocket("ws://localhost:5050/receive");
 
             ws.current.onopen = () => {
-                console.log("WebSocket connection established.");
                 const message = {
                     token: localStorage.getItem("jwtToken"),
                     building_id: buildingId,
@@ -37,12 +36,7 @@ function Stream({buildingId, roomId, cameraId}: StreamProps) {
                 }
             };
 
-            ws.current.onerror = (error) => {
-                console.error("WebSocket error:", error);
-            };
-
             ws.current.onclose = () => {
-                console.warn("WebSocket disconnected. Reconnecting...");
                 setTimeout(connectWebSocket, 2000);
             };
         };

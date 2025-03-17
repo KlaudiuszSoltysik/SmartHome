@@ -1,28 +1,28 @@
-﻿import {useEffect, useState} from 'react';
-import {useNavigate} from 'react-router-dom';
-import {validateEmail} from './utilities/validateEmail.ts';
-import {validatePassword} from './utilities/validatePassword.ts';
+﻿import {useEffect, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {validateEmail} from "./utilities/validateEmail.ts";
+import {validatePassword} from "./utilities/validatePassword.ts";
 
 const LoginPage = () => {
     const navigate = useNavigate();
 
     useEffect(() => {
-        document.title = 'SmartHome - Register';
+        document.title = "SmartHome - Register";
 
-        if (localStorage.getItem('jwtToken')) {
-            navigate('/');
+        if (localStorage.getItem("jwtToken")) {
+            navigate("/");
         }
     }, [navigate]);
 
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const [name, setName] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async () => {
         if (!name) {
-            setError('Name is required.');
+            setError("Name is required.");
             return;
         }
 
@@ -38,31 +38,31 @@ const LoginPage = () => {
             return;
         }
 
-        setError('');
+        setError("");
         setLoading(true);
 
         try {
-            const response = await fetch('http://localhost:5050/users/register', {
-                method: 'POST',
+            const response = await fetch("http://localhost:5050/users/register", {
+                method: "POST",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
                 },
                 body: JSON.stringify({name, email, password}),
             });
 
             if (!response.ok) {
                 return response.text().then(errorMessage => {
-                    setError(errorMessage || 'Failed to register.');
-                    throw new Error(errorMessage || 'Failed to register.');
+                    setError(errorMessage || "Failed to register.");
+                    throw new Error(errorMessage || "Failed to register.");
                 });
             }
 
-            navigate('/login', {state: {message: 'Confirm your email and log in.'}});
+            navigate("/login", {state: {message: "Confirm your email and log in."}});
         } catch (error: unknown) {
             if (error instanceof Error) {
                 setError(error.message);
             } else {
-                setError('An unknown error occurred');
+                setError("An unknown error occurred");
             }
         } finally {
             setLoading(false);
@@ -70,8 +70,8 @@ const LoginPage = () => {
     };
 
     return (
-        <div className='register-page'>
-            <div className='form-container'>
+        <div className="register-page">
+            <div className="form-container">
                 <h1>Register</h1>
                 <form onSubmit={(e) => {
                     e.preventDefault();
@@ -79,32 +79,32 @@ const LoginPage = () => {
                 }}
                       noValidate={true}>
                     <input
-                        type='text'
-                        placeholder='Name'
+                        type="text"
+                        placeholder="Name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />
                     <br/>
                     <input
-                        type='email'
-                        placeholder='Email'
+                        type="email"
+                        placeholder="Email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                     />
                     <br/>
                     <input
-                        type='password'
-                        placeholder='Password'
+                        type="password"
+                        placeholder="Password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                     />
                     <br/>
-                    <button className={'primary-button form-button'} type='submit' disabled={loading}>
-                        {loading ? 'Registering...' : 'Register'}
+                    <button className={"primary-button form-button"} type="submit" disabled={loading}>
+                        {loading ? "Registering..." : "Register"}
                     </button>
                 </form>
-                <p className={'error-message'}
-                   style={{visibility: error ? 'visible' : 'hidden'}}>{error || ''}</p>
+                <p className={"error-message"}
+                   style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>
             </div>
         </div>
     );

@@ -50,7 +50,6 @@ public class RoomController : ControllerBase
         }
             
         var rooms = await _context.Buildings
-            .Include(b=>b.Rooms)
             .Where(b => b.Id == buildingId)
             .Where(b=>b.Users.Contains(user))
             .SelectMany(b=>b.Rooms)
@@ -82,7 +81,6 @@ public class RoomController : ControllerBase
         }
 
         var room = await _context.Buildings
-            .Include(b => b.Rooms)
             .Where(b => b.Users.Contains(user))
             .SelectMany(b => b.Rooms)
             .FirstOrDefaultAsync(r=>r.Id == id);
@@ -108,7 +106,6 @@ public class RoomController : ControllerBase
         }
 
         var building = await _context.Buildings
-            .Include(b => b.Rooms)
             .Where(b => b.Users.Contains(user))
             .FirstOrDefaultAsync(b => b.Id == buildingId);
         
@@ -136,7 +133,6 @@ public class RoomController : ControllerBase
         }
 
         var room = await _context.Buildings
-            .Include(b => b.Rooms)
             .Where(b => b.Users.Contains(user))
             .SelectMany(b => b.Rooms)
             .FirstOrDefaultAsync(r=>r.Id == id);
@@ -164,7 +160,6 @@ public class RoomController : ControllerBase
         }
 
         var room = await _context.Buildings
-            .Include(b => b.Rooms)
             .Where(b => b.Users.Contains(user))
             .SelectMany(b => b.Rooms)
             .FirstOrDefaultAsync(r=>r.Id == id);

@@ -1,4 +1,3 @@
-using System.Net.WebSockets;
 using System.Text;
 using backend_application.Controllers;
 using backend_application.Data;
@@ -79,5 +78,5 @@ app.MapControllers();
 
 app.Run();
 
-// make app more user friendly
+// make app more user-friendly
 // continue react app
