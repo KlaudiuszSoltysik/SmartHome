@@ -10,13 +10,13 @@ namespace backend_application.Controllers;
 
 public class FrameStorageService
 {
-    public ConcurrentDictionary<string, ConcurrentDictionary<string, dynamic>> frames = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<string, dynamic>> _frames = new();
 
     public void AddFrame(int buildingId, int roomId, int cameraId, byte[] frame)
     {
         string key = $"{buildingId}_{roomId}_{cameraId}";
-
-        var frameData = frames.GetOrAdd(key, _ => new ConcurrentDictionary<string, dynamic>());
+        
+        var frameData = _frames.GetOrAdd(key, _ => new ConcurrentDictionary<string, dynamic>());
         frameData["building"] = buildingId;
         frameData["room"] = roomId;
         frameData["camera"] = cameraId;
@@ -26,8 +26,8 @@ public class FrameStorageService
     public byte[] GetFrame(int buildingId, int roomId, int cameraId)
     {
         string key = $"{buildingId}_{roomId}_{cameraId}";
-
-        return frames.TryGetValue(key, out var frameData) && frameData.TryGetValue("frame", out var frame)
+ 
+        return _frames.TryGetValue(key, out var frameData) && frameData.TryGetValue("frame", out var frame)
             ? frame as byte[]
             : null;
     }
@@ -70,14 +70,14 @@ public class WebSocketController : ControllerBase
             await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Missing parameters", CancellationToken.None);
             return;
         }
-        string token = tokenElement.GetString();
+        string? token = tokenElement.GetString();
         int buildingId = buildingIdElement.GetInt32();
         int roomId = roomIdElement.GetInt32();
         int cameraId = cameraIdElement.GetInt32();
         
         var user = await TokenValidator.GetUserFromToken(token, _context);
         
-        if (user == null || user.Buildings.All(b => b.Id != buildingId))
+        if (user.Buildings.All(b => b.Id != buildingId))
         {
             await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Missing parameters", CancellationToken.None);
             return;
@@ -85,7 +85,7 @@ public class WebSocketController : ControllerBase
 
         while (webSocket.State == WebSocketState.Open)
         {
-            buffer = new byte[500000];
+            buffer = new byte[1000000];
             receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
 
             if (receiveResult.MessageType == WebSocketMessageType.Binary)
@@ -129,14 +129,14 @@ public class WebSocketController : ControllerBase
             return;
         }
         
-        string token = tokenElement.GetString();
+        string? token = tokenElement.GetString();
         int buildingId = buildingIdElement.GetInt32();
         int roomId = roomIdElement.GetInt32();
         int cameraId = cameraIdElement.GetInt32();
         
         var user = await TokenValidator.GetUserFromToken(token, _context);
         
-        if (user == null || user.Buildings.All(b => b.Id != buildingId))
+        if (user.Buildings.All(b => b.Id != buildingId))
         {
             await webSocket.CloseAsync(WebSocketCloseStatus.InvalidPayloadData, "Missing parameters", CancellationToken.None);
             return;

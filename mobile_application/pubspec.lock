@@ -53,10 +53,10 @@ packages:
     dependency: transitive
     description:
       name: camera_avfoundation
-      sha256: "3057ada0b30402e3a9b6dffec365c9736a36edbf04abaecc67c4309eadc86b49"
+      sha256: ba48b65a3a97004276ede882e6b838d9667642ff462c95a8bb57ca8a82b6bd25
       url: "https://pub.dev"
     source: hosted
-    version: "0.9.18+9"
+    version: "0.9.18+11"
   camera_platform_interface:
     dependency: transitive
     description:
@@ -196,10 +196,10 @@ packages:
     dependency: "direct main"
     description:
       name: flutter_webrtc
-      sha256: "6ea3a86d95b61cfe42d5715426d355b3cece6c88d0119de428d56f6c653811ce"
+      sha256: b832dc76c0d1577f14aaf35e9c38d4ed7667cbc89c492b7bf4505d8d5f62e08b
       url: "https://pub.dev"
     source: hosted
-    version: "0.12.11"
+    version: "0.12.12+hotfix.1"
   http:
     dependency: "direct main"
     description:

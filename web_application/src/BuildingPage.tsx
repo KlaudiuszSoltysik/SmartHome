@@ -30,6 +30,7 @@ const BuildingPage = () => {
     const [showBuildingPopup, setShowBuildingPopup] = useState(false);
     const [loading, setLoading] = useState(true);
     const [timer, setTimer] = useState<number | null>(null);
+    const [email, setEmail] = useState("");
 
     const navigate = useNavigate();
 
@@ -254,6 +255,44 @@ const BuildingPage = () => {
             }
         } finally {
             setLoading(false);
+            setRoomName("")
+        }
+    };
+
+    const addUser = async () => {
+        if (!email) {
+            setError("Email is required.");
+            return;
+        }
+
+        setError("");
+        setLoading(true);
+
+        try {
+            const response = await fetch("http://localhost:5050/users/add-user", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${localStorage.getItem("jwtToken")}`,
+                },
+                body: JSON.stringify({email, buildingId}),
+            });
+
+            if (!response.ok) {
+                const errorMessage = await response.text();
+                setError(errorMessage || "Failed to add user.");
+                throw new Error(errorMessage || "Failed to add user.");
+            }
+
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                setError(error.message);
+            } else {
+                setError("An unknown error occurred");
+            }
+        } finally {
+            setLoading(false);
+            setEmail("")
         }
     };
 
@@ -306,6 +345,17 @@ const BuildingPage = () => {
                             onMouseUp={handleMouseUpOrLeave}
                             onMouseLeave={handleMouseUpOrLeave}>
                         Delete building
+                    </button>
+                </div>
+                <div className="row">
+                    <input
+                        type="email"
+                        placeholder="Enter user email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <button className="primary-button" onClick={addUser}>
+                        Add User
                     </button>
                 </div>
 

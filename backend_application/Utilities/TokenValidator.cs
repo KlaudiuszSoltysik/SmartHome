@@ -44,7 +44,7 @@ public class TokenValidator
         }
     }
     
-    public static async Task<User> GetUserFromToken(string token, ApplicationDbContext context)
+    public static async Task<User> GetUserFromToken(string? token, ApplicationDbContext context)
     {
         if (string.IsNullOrEmpty(token))
         {

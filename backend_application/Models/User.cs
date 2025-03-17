@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using System.Runtime.CompilerServices;
 
 namespace backend_application.Models;
 
@@ -24,7 +23,7 @@ public class User
     public string Password { get; set; } = string.Empty;
 
     [Required]
-    public bool IsActive { get; set; } = false;
+    public bool IsActive { get; set; }
     
     [MaxLength(36)]
     public string? ConfirmationCode { get; set; } = string.Empty;
@@ -32,6 +31,7 @@ public class User
     [MaxLength(72)]
     public string? ResetPasswordToken { get; set; } = string.Empty;
     
+    public byte[]? Face { get; set; }
     public DateTime? ResetPasswordExpires { get; set; } = DateTime.UtcNow;
     
     public List<Building> Buildings { get; set; } = [];

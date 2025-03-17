@@ -22,5 +22,5 @@ public class Device
     [JsonIgnore]
     public Room Room { get; set; } = null!;
     
-    public List<DeviceData> DeviceData { get; set; } = [];
+    public List<User> AcceptedUsers { get; set; } = [];
 }

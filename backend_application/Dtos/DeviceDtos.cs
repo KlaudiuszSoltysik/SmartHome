@@ -9,10 +9,11 @@ public class DeviceGetDto
 {
     public int Id { get; set; }
     public string Name { get; set; } = string.Empty;
+    
     public string Type { get; set; } = string.Empty;
     
     [AllowNull]
-    public DeviceData DeviceData { get; set; }
+    public List<User> AcceptedUsers { get; set; } = [];
 }
 
 public class DevicePostDto
@@ -26,6 +27,8 @@ public class DevicePostDto
     [MaxLength(50)]
     [MinLength(1)]
     public string Type { get; set; } = string.Empty;
+    
+    public List<User> AcceptedUsers { get; set; } = [];
 }
 
 public class DevicePutDto
@@ -34,4 +37,6 @@ public class DevicePutDto
     [MaxLength(50)]
     [MinLength(1)]
     public string Name { get; set; } = string.Empty;
+    
+    public List<User> AcceptedUsers { get; set; } = [];
 }

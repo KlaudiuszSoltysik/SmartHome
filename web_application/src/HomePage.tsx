@@ -139,6 +139,10 @@ const HomePage = () => {
             }
         } finally {
             setLoading(false);
+            setName("");
+            setAddress("");
+            setPostalCode("");
+            setCountry("");
         }
     };
 

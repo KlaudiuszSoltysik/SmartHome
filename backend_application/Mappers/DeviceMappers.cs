@@ -12,9 +12,7 @@ public class DeviceMappers
             Id = device.Id,
             Name = device.Name,
             Type = device.Type,
-            DeviceData = device.DeviceData
-                .OrderByDescending(d => d.DateTime)
-                .FirstOrDefault(),
+            AcceptedUsers = device.AcceptedUsers,
         };
     }
     
@@ -24,6 +22,7 @@ public class DeviceMappers
         {
             Name = deviceDto.Name,
             Type = deviceDto.Type,
+            AcceptedUsers = deviceDto.AcceptedUsers,
             RoomId = room.Id,
             Room = room
         };

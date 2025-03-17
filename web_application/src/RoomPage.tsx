@@ -1,4 +1,4 @@
-﻿import {useEffect, useState} from "react";
+﻿import React, {useEffect, useState} from "react";
 import {useNavigate, useParams} from "react-router-dom";
 import Stream from "./Stream.tsx";
 
@@ -158,6 +158,7 @@ const RoomPage = () => {
             if (!response.ok) {
                 const errorMessage = await response.text();
                 setError(errorMessage || "Failed to get devices.");
+                throw new Error(errorMessage || "Failed to get devices.");
             }
 
             const responseText = await response.text();
@@ -213,6 +214,7 @@ const RoomPage = () => {
             }
         } finally {
             setLoading(false);
+            setDeviceName("")
         }
     };
 
@@ -262,20 +264,20 @@ const RoomPage = () => {
                     <div className={"loader"}></div>
                 ) : (
                     device.map((device, index) => (
-                        <>
-                            <div className={"row"} key={index}
+                        <React.Fragment key={device.id || index}>
+                            <div className={"row"}
                                  onClick={() => navigate(`/buildings/${buildingId}/rooms/${roomId}/devices/${device.id}`)}>
                                 <p>{device.name}</p>
                                 <p>{device.type}</p>
                             </div>
-                            device.type == "camera" && (
-                            <Stream
-                                buildingId={parseInt(buildingId ?? "0")}
-                                roomId={parseInt(roomId ?? "0")}
-                                cameraId={parseInt(device.name ?? "0")}
-                            />
-                            )
-                        </>
+                            {device.type === "camera" && (
+                                <Stream
+                                    buildingId={parseInt(buildingId ?? "0")}
+                                    roomId={parseInt(roomId ?? "0")}
+                                    cameraId={parseInt(device.name ?? "0")}
+                                />
+                            )}
+                        </React.Fragment>
                     ))
                 )}
                 <p className={"error-message"} style={{visibility: error ? "visible" : "hidden"}}>{error || ""}</p>

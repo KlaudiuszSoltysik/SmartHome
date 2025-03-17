@@ -31,11 +31,6 @@ public class RoomController : ControllerBase
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         var user = await TokenValidator.GetUserFromToken(token, _context);
 
-        if (user == null)
-        {
-            return (NotFound("User not found."), null);
-        }
-
         return (null, user); 
     }
 

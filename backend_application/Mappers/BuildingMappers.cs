@@ -66,7 +66,7 @@ public class BuildingMappers
         return randomKey;
     }
 
-    public static async Task<Dictionary<string, string>> ValidateAddress(string address, string postalCode, string country)
+    private static async Task<Dictionary<string, string>> ValidateAddress(string address, string postalCode, string country)
     {
         string url =
             $"https://nominatim.openstreetmap.org/search.php?street={address}&country={country}&postalcode={postalCode}&format=jsonv2".Replace(' ', '+');

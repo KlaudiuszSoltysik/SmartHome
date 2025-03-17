@@ -1,5 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Models;
@@ -7,7 +6,9 @@ using backend_application.Mappers;
 using backend_application.Utilities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace backend_application.Controllers;
 
@@ -40,12 +41,48 @@ public class UserController : ControllerBase
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         var user = await TokenValidator.GetUserFromToken(token, _context);
 
-        if (user == null)
-        {
-            return (NotFound("User not found."), null);
-        }
-
         return (null, user); 
+    }
+
+    private bool EncodeFace(List<string> images, int userId)
+    {
+        List<string> byteArrayStrings = images
+            .Select(base64 => string.Join(",", Convert.FromBase64String(base64)))
+            .ToList();
+        
+        System.IO.File.WriteAllLines(@$"C:\Users\klaud\Documents\development\SmartHome\{userId}.txt", byteArrayStrings);
+        
+        string pythonVenv = @"C:\Users\klaud\Documents\development\SmartHome\image_processing\.venv\Scripts\python.exe";
+        string scriptPath = @"C:\Users\klaud\Documents\development\SmartHome\image_processing\encode_faces.py";
+        
+        ProcessStartInfo psi = new ProcessStartInfo
+        {
+            FileName = pythonVenv,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true
+        };
+        
+        psi.ArgumentList.Add(scriptPath);
+        psi.ArgumentList.Add(userId.ToString());
+
+        using (Process process = new Process { StartInfo = psi })
+        {
+            process.Start();
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+            process.WaitForExit();
+            
+            System.IO.File.Delete(@$"C:\Users\klaud\Documents\development\SmartHome\{userId}.txt");
+
+            if (process.ExitCode != 0)
+            {
+                return false;
+            }
+            
+            return true;
+        }
     }
     
     [HttpGet]
@@ -121,6 +158,21 @@ public class UserController : ControllerBase
             {"user", UserMappers.BuildUserGetDtoFull(user)},
             {"token", token}
         });
+    }
+    
+    [HttpPost("scan-face")]
+    public async Task<ActionResult> ScanFace([FromBody] List<string> images)
+    {
+        var (errorResult, user) = await ValidateAndGetUser(Request);
+    
+        if (errorResult != null)
+        {
+            return errorResult;
+        }
+        
+        bool success = EncodeFace(images, user.Id);
+
+        return success ? Ok("Face encodings stored successfully.") : BadRequest("Failed to store face encodings.");
     }
     
     [HttpGet("refresh")]
@@ -269,11 +321,6 @@ public class UserController : ControllerBase
     public async Task<IActionResult> AcceptInvitation(string token)
     {
         var principal = _tokenValidator.ValidateInvitationToken(token);
-
-        if (principal == null)
-        {
-            return Unauthorized("Invalid or expired token.");
-        }
         
         var email = principal.FindFirst(ClaimTypes.Email)?.Value 
                     ?? principal.FindFirst("email")?.Value;

@@ -53,6 +53,11 @@ builder.Services.AddScoped<TokenValidator>();
 builder.Services.AddTransient<IEmailSender, EmailSender>();
 builder.Services.AddSingleton<FrameStorageService>();
 
+builder.Services.Configure<Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerOptions>(options =>
+{
+    options.Limits.MaxRequestBodySize = 50 * 1024 * 1024;
+});
+
 var app = builder.Build();
 app.UseCors();
 
@@ -77,6 +82,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// make app more user-friendly
-// continue react app

@@ -30,17 +30,11 @@ public class ApplicationDbContext : DbContext
             .HasOne(d => d.Room)
             .WithMany(r => r.Devices)
             .HasForeignKey(d => d.RoomId);
-        
-        modelBuilder.Entity<DeviceData>()
-            .HasOne(d => d.Device)
-            .WithMany(d => d.DeviceData)
-            .HasForeignKey(d => d.DeviceId);
     }
 
     public DbSet<BuildingUser> BuildingUser { get; set; }
     public DbSet<Building> Buildings { get; set; }
     public DbSet<Room> Rooms { get; set; }
     public DbSet<Device> Devices { get; set; }
-    public DbSet<DeviceData> DeviceData { get; set; }
     public DbSet<User> Users { get; set; }
 }
