@@ -1,5 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using backend_application.Data;
 using backend_application.Dtos;
 using backend_application.Models;
@@ -39,11 +38,6 @@ public class UserController : ControllerBase
 
         var token = authorizationHeader.Substring("Bearer ".Length).Trim();
         var user = await TokenValidator.GetUserFromToken(token, _context);
-
-        if (user == null)
-        {
-            return (NotFound("User not found."), null);
-        }
 
         return (null, user); 
     }
@@ -269,11 +263,6 @@ public class UserController : ControllerBase
     public async Task<IActionResult> AcceptInvitation(string token)
     {
         var principal = _tokenValidator.ValidateInvitationToken(token);
-
-        if (principal == null)
-        {
-            return Unauthorized("Invalid or expired token.");
-        }
         
         var email = principal.FindFirst(ClaimTypes.Email)?.Value 
                     ?? principal.FindFirst("email")?.Value;

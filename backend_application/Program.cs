@@ -77,6 +77,3 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
-
-// make app more user-friendly
-// continue react app

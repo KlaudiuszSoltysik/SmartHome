@@ -1,13 +1,13 @@
-import 'dart:convert';
+import "dart:convert";
 
-import 'package:camera/camera.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:image/image.dart' as img;
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:wakelock_plus/wakelock_plus.dart';
-import 'package:web_socket_channel/io.dart';
+import "package:camera/camera.dart";
+import "package:flutter/material.dart";
+import "package:flutter/services.dart";
+import "package:http/http.dart" as http;
+import "package:image/image.dart" as img;
+import "package:shared_preferences/shared_preferences.dart";
+import "package:wakelock_plus/wakelock_plus.dart";
+import "package:web_socket_channel/io.dart";
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -22,11 +22,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      initialRoute: '/',
+      initialRoute: "/",
       routes: {
-        '/': (context) => AuthCheck(),
-        '/login': (context) => LoginScreen(),
-        '/home': (context) => HomeScreen(),
+        "/": (context) => AuthCheck(),
+        "/login": (context) => LoginScreen(),
+        "/home": (context) => HomeScreen(),
       },
     );
   }
@@ -46,11 +46,11 @@ class _AuthCheckState extends State<AuthCheck> {
 
   Future<void> _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String? token = prefs.getString('jwt_token');
+    String? token = prefs.getString("jwt_token");
     if (token != null) {
-      Navigator.pushReplacementNamed(context, '/home');
+      Navigator.pushReplacementNamed(context, "/home");
     } else {
-      Navigator.pushReplacementNamed(context, '/login');
+      Navigator.pushReplacementNamed(context, "/login");
     }
   }
 
@@ -71,46 +71,46 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     final response = await http.post(
-      // Uri.parse('http://10.0.2.2:5050/users/login'),
-      Uri.parse('http://192.168.8.21:5050/users/login'),
+      // Uri.parse("http://10.0.2.2:5050/users/login"),
+      Uri.parse("http://192.168.8.21:5050/users/login"),
       body: jsonEncode({
-        'email': _emailController.text,
-        'password': _passwordController.text,
+        "email": _emailController.text,
+        "password": _passwordController.text,
       }),
-      headers: {'Content-Type': 'application/json'},
+      headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('jwt_token', data['token']);
-      Navigator.pushReplacementNamed(context, '/home');
+      await prefs.setString("jwt_token", data["token"]);
+      Navigator.pushReplacementNamed(context, "/home");
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Login failed')));
+      ).showSnackBar(SnackBar(content: Text("Login failed")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      appBar: AppBar(title: Text("Login")),
       body: Padding(
         padding: EdgeInsets.all(16.0),
         child: Column(
           children: [
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: InputDecoration(labelText: "Email"),
             ),
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: InputDecoration(labelText: "Password"),
               obscureText: true,
             ),
             SizedBox(height: 20),
-            ElevatedButton(onPressed: _login, child: Text('Login')),
+            ElevatedButton(onPressed: _login, child: Text("Login")),
           ],
         ),
       ),
@@ -161,44 +161,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _fetchBuildings() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    token = prefs.getString('jwt_token');
+    token = prefs.getString("jwt_token");
 
     final response = await http.get(
-      // Uri.parse('http://10.0.2.2:5050/buildings'),
-      Uri.parse('http://192.168.8.21:5050/buildings'),
+      // Uri.parse("http://10.0.2.2:5050/buildings"),
+      Uri.parse("http://192.168.8.21:5050/buildings"),
       headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
       },
     );
 
     setState(() {
       _buildings = json.decode(response.body);
-      selectedBuildingId = _buildings.isNotEmpty ? _buildings[0]['id'] : null;
+      selectedBuildingId = _buildings.isNotEmpty ? _buildings[0]["id"] : null;
     });
     await _fetchRooms(selectedBuildingId!);
   }
 
   Future<void> _fetchRooms(int buildingId) async {
     final response = await http.get(
-      // Uri.parse('http://10.0.2.2:5050/buildings/$buildingId/rooms'),
-      Uri.parse('http://192.168.8.21:5050/buildings/$buildingId/rooms'),
+      // Uri.parse("http://10.0.2.2:5050/buildings/$buildingId/rooms"),
+      Uri.parse("http://192.168.8.21:5050/buildings/$buildingId/rooms"),
       headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
+        "Authorization": "Bearer $token",
+        "Content-Type": "application/json",
       },
     );
 
     setState(() {
       _rooms = json.decode(response.body);
-      selectedRoomId = _rooms.isNotEmpty ? _rooms[0]['id'] : null;
+      selectedRoomId = _rooms.isNotEmpty ? _rooms[0]["id"] : null;
     });
   }
 
   Future<void> _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('jwt_token');
-    Navigator.pushReplacementNamed(context, '/login');
+    await prefs.remove("jwt_token");
+    Navigator.pushReplacementNamed(context, "/login");
   }
 
   void _startStreaming() {
@@ -312,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Live Camera'),
+        title: Text("Live Camera"),
         actions: [IconButton(icon: Icon(Icons.logout), onPressed: _logout)],
       ),
       body: Center(
@@ -330,7 +330,7 @@ class _HomeScreenState extends State<HomeScreen> {
               flex: 1,
               child:
                   _buildings.isEmpty
-                      ? Center(child: Text('No buildings found'))
+                      ? Center(child: Text("No buildings found"))
                       : Column(
                         children: [
                           DropdownButton<int>(
@@ -346,13 +346,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                   building,
                                 ) {
                                   return DropdownMenuItem<int>(
-                                    value: building['id'],
-                                    child: Text(building['name']),
+                                    value: building["id"],
+                                    child: Text(building["name"]),
                                   );
                                 }).toList(),
                           ),
                           _rooms.isEmpty
-                              ? Center(child: Text('No rooms found'))
+                              ? Center(child: Text("No rooms found"))
                               : DropdownButton<int>(
                                 value: selectedRoomId,
                                 onChanged: (int? newValue) {
@@ -364,8 +364,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 items:
                                     _rooms.map<DropdownMenuItem<int>>((room) {
                                       return DropdownMenuItem<int>(
-                                        value: room['id'],
-                                        child: Text(room['name']),
+                                        value: room["id"],
+                                        child: Text(room["name"]),
                                       );
                                     }).toList(),
                               ),
@@ -386,11 +386,11 @@ class _HomeScreenState extends State<HomeScreen> {
                           !isStreaming
                               ? ElevatedButton(
                                 onPressed: _startStreaming,
-                                child: Text('Start'),
+                                child: Text("Start"),
                               )
                               : ElevatedButton(
                                 onPressed: _stopStreaming,
-                                child: Text('Stop'),
+                                child: Text("Stop"),
                               ),
                         ],
                       ),
