@@ -1,10 +1,10 @@
-import 'dart:convert';
+import "dart:convert";
 
 import "package:camera/camera.dart";
 import "package:flutter/material.dart";
-import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
+import "package:flutter/services.dart";
+import "package:http/http.dart" as http;
+import "package:shared_preferences/shared_preferences.dart";
 
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -14,7 +14,7 @@ class ScanScreen extends StatefulWidget {
 }
 
 class _ScanScreenState extends State<ScanScreen> {
-  static const platform = MethodChannel('com.mobile_application/channel');
+  static const platform = MethodChannel("com.mobile_application/channel");
   CameraController? _cameraController;
   bool _isRecording = false;
   XFile? _videoFile;
@@ -68,8 +68,8 @@ class _ScanScreenState extends State<ScanScreen> {
 
     String videoPath = _videoFile!.path;
 
-    final List<dynamic> images = await platform.invokeMethod('extractFrames', {
-      'path': videoPath,
+    final List<dynamic> images = await platform.invokeMethod("extractFrames", {
+      "path": videoPath,
     });
 
     SharedPreferences prefs = await SharedPreferences.getInstance();

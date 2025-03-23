@@ -8,10 +8,10 @@ import traceback
 def encode_faces(user_id):
     file_path = rf"C:\Users\klaud\Documents\development\SmartHome\{user_id}.txt"
 
-    with open(file_path, 'r') as f:
+    with open(file_path, "r") as f:
         images_list = []
         for line in f:
-            byte_array = np.array([int(x) for x in line.strip().split(',')], dtype=np.uint8)
+            byte_array = np.array([int(x) for x in line.strip().split(",")], dtype=np.uint8)
             images_list.append(byte_array)
 
     encodings = []
